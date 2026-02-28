@@ -6,48 +6,48 @@ import ciris.*
 
 /** Configuración de base de datos (HikariCP + Doobie). */
 final case class DbConfig(
-                           url: String,
-                           user: String,
-                           password: Secret[String],
-                           schema: String,
-                           poolSize: Int
-                         )
+    url: String,
+    user: String,
+    password: Secret[String],
+    schema: String,
+    poolSize: Int
+)
 
 /** Configuración del servidor JWT. */
 final case class JwtConfig(
-                            secret: Secret[String],
-                            expirationHours: Long
-                          )
+    secret: Secret[String],
+    expirationHours: Long
+)
 
 /** Configuración de AWS / S3. */
 final case class AwsConfig(
-                            accessKeyId: Secret[String],
-                            secretAccessKey: Secret[String],
-                            region: String,
-                            s3Bucket: String
-                          )
+    accessKeyId: Secret[String],
+    secretAccessKey: Secret[String],
+    region: String,
+    s3Bucket: String
+)
 
 /** Configuración del servidor HTTP. */
 final case class ServerConfig(
-                               host: String,
-                               port: Int,
-                               allowedOrigins: List[String]
-                             )
+    host: String,
+    port: Int,
+    allowedOrigins: List[String]
+)
 
 /** Configuración del usuario administrador inicial. */
 final case class AdminConfig(
-                              email: String,
-                              password: Secret[String]
-                            )
+    email: String,
+    password: Secret[String]
+)
 
 /** Configuración global de la aplicación. */
 final case class AppConfig(
-                            db: DbConfig,
-                            jwt: JwtConfig,
-                            aws: AwsConfig,
-                            server: ServerConfig,
-                            admin: AdminConfig
-                          )
+    db: DbConfig,
+    jwt: JwtConfig,
+    aws: AwsConfig,
+    server: ServerConfig,
+    admin: AdminConfig
+)
 
 object AppConfig:
 
@@ -101,9 +101,8 @@ object AppConfig:
   // Loader principal
   // ─────────────────────────────────────────────────────────────
 
-  /** Carga la configuración completa de la aplicación.
-   * Falla en startup si falta alguna variable obligatoria.
-   */
+  /** Carga la configuración completa de la aplicación. Falla en startup si falta alguna variable obligatoria.
+    */
   def load: IO[AppConfig] =
     (
       dbConfig,
