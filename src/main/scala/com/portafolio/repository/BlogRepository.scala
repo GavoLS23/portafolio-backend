@@ -29,7 +29,6 @@ object BlogRepository:
 
   def make(xa: Transactor[IO]): BlogRepository = new BlogRepository:
 
-
     given Meta[PostStatus] = Meta[String].timap(s => PostStatus.fromString(s).getOrElse(PostStatus.Draft))(_.value)
 
     given Meta[Language] = Meta[String].timap(s => Language.fromCode(s).getOrElse(Language.Es))(_.code)

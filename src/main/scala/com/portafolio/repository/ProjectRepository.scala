@@ -31,7 +31,6 @@ object ProjectRepository:
 
   def make(xa: Transactor[IO]): ProjectRepository = new ProjectRepository:
 
-
     given Meta[ProjectStatus] = Meta[String].timap(s => ProjectStatus.fromString(s).getOrElse(ProjectStatus.Draft))(_.value)
 
     given Meta[Language] = Meta[String].timap(s => Language.fromCode(s).getOrElse(Language.Es))(_.code)

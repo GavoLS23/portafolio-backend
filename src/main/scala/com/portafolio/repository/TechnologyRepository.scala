@@ -22,7 +22,6 @@ object TechnologyRepository:
 
   def make(xa: Transactor[IO]): TechnologyRepository = new TechnologyRepository:
 
-
     private def toTech(id: UUID, name: String, iconUrl: Option[String]): Technology =
       Technology(TechnologyId(id), name, iconUrl)
 

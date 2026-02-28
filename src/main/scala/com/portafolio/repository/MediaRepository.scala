@@ -36,7 +36,6 @@ object MediaRepository:
 
   def make(xa: Transactor[IO]): MediaRepository = new MediaRepository:
 
-
     // Doobie Meta para MediaType
     given Meta[MediaType] = Meta[String].timap(s => MediaType.fromString(s).getOrElse(MediaType.Image))(_.value)
 
