@@ -18,8 +18,7 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
   *   1. Carga configuración desde variables de entorno (Ciris). 2. Crea el pool de conexiones HikariCP. 3. Ejecuta migraciones Flyway (crea el schema si no existe). 4. Inicializa el servicio de
   *      almacenamiento según `APP_ENV`:
   *      - `development` → [[LocalStorageService]] (disco local).
-  *      - `production` → [[S3Service]] (AWS S3).
-  *      5. Crea el seed del admin si la BD está vacía. 6. Levanta el servidor HTTP Ember.
+  *      - `production` → [[S3Service]] (AWS S3). 5. Crea el seed del admin si la BD está vacía. 6. Levanta el servidor HTTP Ember.
   */
 object Main extends IOApp:
 
