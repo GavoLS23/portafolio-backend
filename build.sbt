@@ -1,7 +1,26 @@
-ThisBuild / version := "0.1.0-SNAPSHOT"
-ThisBuild / scalaVersion := "3.3.1"
-ThisBuild / organization := "com.portafolio"
+// ─────────────────────────────────────────────────────────────
+// Global build configuration (REQUIRED for Scalafix)
+// ─────────────────────────────────────────────────────────────
+inThisBuild(
+  List(
+    organization := "com.portafolio",
+    version := "0.1.0-SNAPSHOT",
+    scalaVersion := "3.3.5",
 
+    // ── SemanticDB (required for Scalafix semantic rules)
+    semanticdbEnabled := true,
+    semanticdbVersion := scalafixSemanticdb.revision,
+
+    // ── Required for RemoveUnused (Scala 3)
+    scalacOptions ++= Seq(
+      "-Wunused:all"
+    )
+  )
+)
+
+// ─────────────────────────────────────────────────────────────
+// Versions
+// ─────────────────────────────────────────────────────────────
 lazy val tapirVersion = "1.9.10"
 lazy val doobieVersion = "1.0.0-RC4"
 lazy val http4sVersion = "0.23.24"
@@ -10,71 +29,74 @@ lazy val catsEffectVersion = "3.5.3"
 lazy val awsSdkVersion = "2.23.15"
 lazy val log4catsVersion = "2.6.0"
 
+// ─────────────────────────────────────────────────────────────
+// Project
+// ─────────────────────────────────────────────────────────────
 lazy val root = (project in file("."))
   .settings(
     name := "portafolio-backend",
 
+    // ── Dependencies ────────────────────────────────────────
     libraryDependencies ++= Seq(
 
-      // ── Cats Effect ────────────────────────────────────────────────────
+      // Cats Effect
       "org.typelevel" %% "cats-effect" % catsEffectVersion,
 
-      // ── Http4s ─────────────────────────────────────────────────────────
+      // Http4s
       "org.http4s" %% "http4s-ember-server" % http4sVersion,
       "org.http4s" %% "http4s-ember-client" % http4sVersion,
       "org.http4s" %% "http4s-circe" % http4sVersion,
       "org.http4s" %% "http4s-dsl" % http4sVersion,
 
-      // ── Tapir (REST endpoints + OpenAPI / Swagger UI) ──────────────────
+      // Tapir
       "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % tapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-refined" % tapirVersion,
 
-      // ── Doobie (PostgreSQL) ─────────────────────────────────────────────
+      // Doobie
       "org.tpolecat" %% "doobie-core" % doobieVersion,
       "org.tpolecat" %% "doobie-postgres" % doobieVersion,
       "org.tpolecat" %% "doobie-hikari" % doobieVersion,
 
-      // ── Circe ──────────────────────────────────────────────────────────
+      // Circe
       "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-generic" % circeVersion,
       "io.circe" %% "circe-parser" % circeVersion,
       "io.circe" %% "circe-refined" % circeVersion,
 
-      // ── Ciris (config desde variables de entorno) ───────────────────────
+      // Ciris
       "is.cir" %% "ciris" % "3.6.0",
       "is.cir" %% "ciris-refined" % "3.6.0",
 
-      // ── Flyway (migraciones) ────────────────────────────────────────────
+      // Flyway
       "org.flywaydb" % "flyway-core" % "10.4.1",
       "org.flywaydb" % "flyway-database-postgresql" % "10.4.1",
 
-      // ── Refined Types ───────────────────────────────────────────────────
+      // Refined
       "eu.timepit" %% "refined" % "0.11.0",
 
-      // ── JWT ─────────────────────────────────────────────────────────────
+      // JWT
       "com.github.jwt-scala" %% "jwt-circe" % "9.4.4",
 
-      // ── BCrypt (hashing de contraseñas) ────────────────────────────────
+      // BCrypt
       "org.mindrot" % "jbcrypt" % "0.4",
 
-      // ── AWS SDK v2 (S3 + presigned URLs) ───────────────────────────────
+      // AWS SDK
       "software.amazon.awssdk" % "s3" % awsSdkVersion,
       "software.amazon.awssdk" % "s3-transfer-manager" % awsSdkVersion,
 
-      // ── Logging ─────────────────────────────────────────────────────────
-      "org.typelevel" %% "log4cats-core"  % log4catsVersion,
+      // Logging
       "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
-      "ch.qos.logback" % "logback-classic" % "1.5.13",
+      "ch.qos.logback" % "logback-classic" % "1.4.14",
 
-      // ── Testing ─────────────────────────────────────────────────────────
+      // Testing
       "org.scalatest" %% "scalatest" % "3.2.18" % Test,
       "org.typelevel" %% "cats-effect-testing-scalatest" % "1.5.0" % Test,
       "org.tpolecat" %% "doobie-scalatest" % doobieVersion % Test
     ),
 
-    // ── Fork JVM para que IOApp corra en el hilo principal ─────────────
+    // ── JVM / Runtime ───────────────────────────────────────
     Compile / run / fork := true,
 
     scalacOptions ++= Seq(
@@ -83,7 +105,7 @@ lazy val root = (project in file("."))
       "-unchecked"
     ),
 
-    // ── sbt-assembly (fat JAR para Docker) ─────────────────────────────
+    // ── Assembly ────────────────────────────────────────────
     assembly / mainClass := Some("com.portafolio.Main"),
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard

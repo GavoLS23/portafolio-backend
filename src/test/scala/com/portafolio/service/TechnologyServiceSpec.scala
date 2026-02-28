@@ -24,8 +24,7 @@ class TechnologyServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers
       IO.pure(ids.flatMap(db.get))
 
     def create(name: String, iconUrl: Option[String]): IO[Technology] =
-      if db.values.exists(_.name == name) then
-        IO.raiseError(new RuntimeException("Nombre duplicado"))
+      if db.values.exists(_.name == name) then IO.raiseError(new RuntimeException("Nombre duplicado"))
       else
         val t = Technology(TechnologyId.generate(), name, iconUrl)
         db += t.id -> t
@@ -44,25 +43,25 @@ class TechnologyServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers
   "TechnologyService" should {
 
     "crear una tecnología nueva" in {
-      val repo    = new InMemoryTechRepo
+      val repo = new InMemoryTechRepo
       val service = TechnologyService.make(repo)
-      val req     = CreateTechnologyRequest("Scala", Some("https://scala-lang.org/logo.png"))
+      val req = CreateTechnologyRequest("Scala", Some("https://scala-lang.org/logo.png"))
 
       service.create(req).asserting {
         case Right(resp) =>
-          resp.name    shouldBe "Scala"
+          resp.name shouldBe "Scala"
           resp.iconUrl shouldBe Some("https://scala-lang.org/logo.png")
         case Left(err) => fail(s"Error inesperado: $err")
       }
     }
 
     "rechazar nombre duplicado" in {
-      val repo    = new InMemoryTechRepo
+      val repo = new InMemoryTechRepo
       val service = TechnologyService.make(repo)
-      val req     = CreateTechnologyRequest("Scala", None)
+      val req = CreateTechnologyRequest("Scala", None)
 
       for
-        _      <- service.create(req)
+        _ <- service.create(req)
         result <- service.create(req)
       yield result match
         case Left(AppError.Conflict(_)) => succeed
@@ -70,7 +69,7 @@ class TechnologyServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers
     }
 
     "listar todas las tecnologías" in {
-      val repo    = new InMemoryTechRepo
+      val repo = new InMemoryTechRepo
       val service = TechnologyService.make(repo)
 
       for

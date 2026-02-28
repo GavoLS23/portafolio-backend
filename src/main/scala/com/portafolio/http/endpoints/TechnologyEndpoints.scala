@@ -9,7 +9,6 @@ import com.portafolio.service.{AuthService, TechnologyService}
 import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
-import sttp.tapir.generic.auto.*
 import sttp.tapir.server.ServerEndpoint
 
 object TechnologyEndpoints:
@@ -69,16 +68,13 @@ object TechnologyEndpoints:
       listPublic.serverLogic { _ =>
         techService.listAll.map(Right(_))
       },
-
       create.serverSecurityLogic(sec).serverLogic { _ => req =>
         techService.create(req).map(_.left.map(AuthMiddleware.toTapirError))
       },
-
       update.serverSecurityLogic(sec).serverLogic { _ => input =>
         val (id, req) = input
         techService.update(id, req).map(_.left.map(AuthMiddleware.toTapirError))
       },
-
       delete.serverSecurityLogic(sec).serverLogic { _ => id =>
         techService.delete(id).map(_.left.map(AuthMiddleware.toTapirError))
       }

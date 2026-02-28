@@ -31,32 +31,24 @@ object ProjectRepository:
 
   def make(xa: Transactor[IO]): ProjectRepository = new ProjectRepository:
 
-    import com.portafolio.domain.common.Ids.ProjectId.given
-    import com.portafolio.domain.common.Ids.MediaId.given
-    import com.portafolio.domain.common.Ids.TechnologyId.given
+    given Meta[ProjectStatus] = Meta[String].timap(s => ProjectStatus.fromString(s).getOrElse(ProjectStatus.Draft))(_.value)
 
-    given Meta[ProjectStatus] = Meta[String].timap(
-      s => ProjectStatus.fromString(s).getOrElse(ProjectStatus.Draft)
-    )(_.value)
-
-    given Meta[Language] = Meta[String].timap(
-      s => Language.fromCode(s).getOrElse(Language.Es)
-    )(_.code)
+    given Meta[Language] = Meta[String].timap(s => Language.fromCode(s).getOrElse(Language.Es))(_.code)
 
     private type ProjectRow = (UUID, String, String, Int, Option[String], Option[String], Option[UUID], Instant, Instant)
 
     private def toProject(row: ProjectRow): Project =
       val (id, slug, status, order, demo, repo, thumb, ca, ua) = row
       Project(
-        id               = ProjectId(id),
-        slug             = slug,
-        status           = ProjectStatus.fromString(status).getOrElse(ProjectStatus.Draft),
-        displayOrder     = order,
-        demoUrl          = demo,
-        repositoryUrl    = repo,
+        id = ProjectId(id),
+        slug = slug,
+        status = ProjectStatus.fromString(status).getOrElse(ProjectStatus.Draft),
+        displayOrder = order,
+        demoUrl = demo,
+        repositoryUrl = repo,
         thumbnailMediaId = thumb.map(MediaId(_)),
-        createdAt        = ca,
-        updatedAt        = ua
+        createdAt = ca,
+        updatedAt = ua
       )
 
     private val selectProject =
@@ -92,10 +84,10 @@ object ProjectRepository:
         .query[(UUID, String, String, String, String)]
         .map { case (pid, lang, title, desc, longDesc) =>
           ProjectTranslation(
-            projectId       = ProjectId(pid),
-            language        = Language.fromCode(lang).getOrElse(Language.Es),
-            title           = title,
-            description     = desc,
+            projectId = ProjectId(pid),
+            language = Language.fromCode(lang).getOrElse(Language.Es),
+            title = title,
+            description = desc,
             longDescription = longDesc
           )
         }
@@ -127,10 +119,10 @@ object ProjectRepository:
     def update(id: ProjectId, req: UpdateProjectRequest): IO[Option[Project]] =
       (for
         updated <- updateFields(id, req)
-        _       <- updated.traverse_ { p =>
-                     req.translations.traverse_(ts => insertTranslations(p.id, ts)) *>
-                     req.technologyIds.traverse_(ids => setTechnologies(p.id, ids))
-                   }
+        _ <- updated.traverse_ { p =>
+          req.translations.traverse_(ts => insertTranslations(p.id, ts)) *>
+            req.technologyIds.traverse_(ids => setTechnologies(p.id, ids))
+        }
       yield updated).transact(xa)
 
     def updateTranslations(projectId: ProjectId, translations: List[TranslationInput]): IO[Unit] =
@@ -140,22 +132,27 @@ object ProjectRepository:
       setTechnologies(projectId, techIds).transact(xa)
 
     def reorder(orderedIds: List[ProjectId]): IO[Unit] =
-      orderedIds.zipWithIndex.traverse_ { case (id, idx) =>
-        sql"UPDATE projects SET display_order = $idx WHERE id = ${id.value}".update.run
-      }.transact(xa)
+      orderedIds.zipWithIndex
+        .traverse_ { case (id, idx) =>
+          sql"UPDATE projects SET display_order = $idx WHERE id = ${id.value}".update.run
+        }
+        .transact(xa)
 
     def delete(id: ProjectId): IO[Boolean] =
-      sql"DELETE FROM projects WHERE id = ${id.value}"
-        .update.run.map(_ > 0).transact(xa)
+      sql"DELETE FROM projects WHERE id = ${id.value}".update.run.map(_ > 0).transact(xa)
 
     def slugExists(slug: String, excludeId: Option[ProjectId]): IO[Boolean] =
       excludeId match
         case None =>
           sql"SELECT EXISTS(SELECT 1 FROM projects WHERE slug = $slug)"
-            .query[Boolean].unique.transact(xa)
+            .query[Boolean]
+            .unique
+            .transact(xa)
         case Some(eid) =>
           sql"SELECT EXISTS(SELECT 1 FROM projects WHERE slug = $slug AND id <> ${eid.value})"
-            .query[Boolean].unique.transact(xa)
+            .query[Boolean]
+            .unique
+            .transact(xa)
 
     // ── Helpers internos (dentro de una misma transacción) ──────────────────
 
@@ -198,11 +195,15 @@ object ProjectRepository:
 
       if sets.isEmpty then
         (selectProject ++ fr"WHERE id = ${id.value}")
-          .query[ProjectRow].map(toProject).option
+          .query[ProjectRow]
+          .map(toProject)
+          .option
       else
         val setClause = sets.reduce(_ ++ fr", " ++ _)
         (fr"UPDATE projects SET " ++ setClause ++
           fr"WHERE id = ${id.value}" ++
           fr"""RETURNING id, slug, status::text, display_order, demo_url,
                         repository_url, thumbnail_media_id, created_at, updated_at""")
-          .query[ProjectRow].map(toProject).option
+          .query[ProjectRow]
+          .map(toProject)
+          .option

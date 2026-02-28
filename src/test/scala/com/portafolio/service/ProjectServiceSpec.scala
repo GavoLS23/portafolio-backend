@@ -26,14 +26,14 @@ class ProjectServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers:
     def findAll(onlyPublished: Boolean): IO[List[Project]] =
       IO.pure(db.values.filter(p => !onlyPublished || p.status == ProjectStatus.Published).toList)
 
-    def findById(id: ProjectId): IO[Option[Project]]      = IO.pure(db.get(id))
-    def findBySlug(slug: String): IO[Option[Project]]     = IO.pure(db.values.find(_.slug == slug))
+    def findById(id: ProjectId): IO[Option[Project]] = IO.pure(db.get(id))
+    def findBySlug(slug: String): IO[Option[Project]] = IO.pure(db.values.find(_.slug == slug))
     def findTranslations(id: ProjectId): IO[List[ProjectTranslation]] = IO.pure(List.empty)
-    def findTechnologyIds(id: ProjectId): IO[List[TechnologyId]]      = IO.pure(List.empty)
+    def findTechnologyIds(id: ProjectId): IO[List[TechnologyId]] = IO.pure(List.empty)
 
     def create(req: CreateProjectRequest): IO[Project] =
       val id = ProjectId.generate()
-      val p  = mkProject(id, req.slug)
+      val p = mkProject(id, req.slug)
       db += id -> p
       IO.pure(p)
 
@@ -45,8 +45,8 @@ class ProjectServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers:
       })
 
     def updateTranslations(id: ProjectId, ts: List[TranslationInput]): IO[Unit] = IO.unit
-    def updateTechnologies(id: ProjectId, ids: List[TechnologyId]): IO[Unit]    = IO.unit
-    def reorder(ids: List[ProjectId]): IO[Unit]                                 = IO.unit
+    def updateTechnologies(id: ProjectId, ids: List[TechnologyId]): IO[Unit] = IO.unit
+    def reorder(ids: List[ProjectId]): IO[Unit] = IO.unit
 
     def delete(id: ProjectId): IO[Boolean] =
       IO.pure(db.remove(id).isDefined)
@@ -57,9 +57,9 @@ class ProjectServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers:
   "ProjectService" should {
 
     "crear un proyecto con slug único" in {
-      val repo    = new InMemoryProjectRepo
+      val repo = new InMemoryProjectRepo
       val service = ProjectService.make(repo)
-      val req     = CreateProjectRequest("my-project", None, None, List.empty, List.empty)
+      val req = CreateProjectRequest("my-project", None, None, List.empty, List.empty)
 
       service.create(req).asserting {
         case Right(resp) => resp.slug shouldBe "my-project"
@@ -68,20 +68,20 @@ class ProjectServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers:
     }
 
     "rechazar slug duplicado" in {
-      val repo    = new InMemoryProjectRepo
+      val repo = new InMemoryProjectRepo
       val service = ProjectService.make(repo)
-      val req     = CreateProjectRequest("duplicado", None, None, List.empty, List.empty)
+      val req = CreateProjectRequest("duplicado", None, None, List.empty, List.empty)
 
       for
-        _      <- service.create(req)
+        _ <- service.create(req)
         result <- service.create(req)
       yield result shouldBe Left(AppError.Conflict("El slug 'duplicado' ya existe"))
     }
 
     "retornar NotFound para ID inexistente" in {
-      val repo    = new InMemoryProjectRepo
+      val repo = new InMemoryProjectRepo
       val service = ProjectService.make(repo)
-      val fakeId  = ProjectId.generate()
+      val fakeId = ProjectId.generate()
 
       service.getById(fakeId).asserting {
         case Left(AppError.NotFound(_)) => succeed
@@ -90,14 +90,14 @@ class ProjectServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers:
     }
 
     "eliminar proyecto existente" in {
-      val repo    = new InMemoryProjectRepo
+      val repo = new InMemoryProjectRepo
       val service = ProjectService.make(repo)
-      val req     = CreateProjectRequest("to-delete", None, None, List.empty, List.empty)
+      val req = CreateProjectRequest("to-delete", None, None, List.empty, List.empty)
 
       for
         created <- service.create(req)
-        id       = created.getOrElse(fail()).id
-        result  <- service.delete(id)
+        id = created.getOrElse(fail()).id
+        result <- service.delete(id)
       yield result shouldBe Right(())
     }
   }

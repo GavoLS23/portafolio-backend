@@ -22,8 +22,6 @@ object TechnologyRepository:
 
   def make(xa: Transactor[IO]): TechnologyRepository = new TechnologyRepository:
 
-    import com.portafolio.domain.common.Ids.TechnologyId.given
-
     private def toTech(id: UUID, name: String, iconUrl: Option[String]): Technology =
       Technology(TechnologyId(id), name, iconUrl)
 
@@ -74,8 +72,6 @@ object TechnologyRepository:
         .transact(xa)
 
     def delete(id: TechnologyId): IO[Boolean] =
-      sql"DELETE FROM technologies WHERE id = ${id.value}"
-        .update
-        .run
+      sql"DELETE FROM technologies WHERE id = ${id.value}".update.run
         .map(_ > 0)
         .transact(xa)

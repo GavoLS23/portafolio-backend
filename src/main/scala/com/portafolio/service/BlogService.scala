@@ -49,13 +49,13 @@ object BlogService:
       for
         slugConflict <- req.slug.traverse(slug => repo.slugExists(slug, excludeId = Some(id)))
         result <- slugConflict.filter(identity) match
-                    case Some(true) =>
-                      IO.pure(Left(AppError.Conflict("El slug ya está en uso")))
-                    case _ =>
-                      repo.update(id, req).flatMap {
-                        case None    => IO.pure(Left(AppError.NotFound(s"Post no encontrado: ${id.value}")))
-                        case Some(p) => toResponse(p).map(Right(_))
-                      }
+          case Some(true) =>
+            IO.pure(Left(AppError.Conflict("El slug ya está en uso")))
+          case _ =>
+            repo.update(id, req).flatMap {
+              case None    => IO.pure(Left(AppError.NotFound(s"Post no encontrado: ${id.value}")))
+              case Some(p) => toResponse(p).map(Right(_))
+            }
       yield result
 
     def delete(id: BlogPostId): IO[Either[AppError, Unit]] =
@@ -65,19 +65,16 @@ object BlogService:
       }
 
     private def toResponse(p: BlogPost): IO[BlogPostResponse] =
-      (repo.findTranslations(p.id), repo.findTags(p.id)).mapN {
-        (translations, tags) =>
-          BlogPostResponse(
-            id               = p.id,
-            slug             = p.slug,
-            status           = p.status,
-            thumbnailMediaId = p.thumbnailMediaId,
-            publishedAt      = p.publishedAt,
-            translations     = translations.map(t =>
-              BlogTranslationInput(t.language, t.title, t.excerpt, t.content)
-            ),
-            tags             = tags,
-            createdAt        = p.createdAt,
-            updatedAt        = p.updatedAt
-          )
+      (repo.findTranslations(p.id), repo.findTags(p.id)).mapN { (translations, tags) =>
+        BlogPostResponse(
+          id = p.id,
+          slug = p.slug,
+          status = p.status,
+          thumbnailMediaId = p.thumbnailMediaId,
+          publishedAt = p.publishedAt,
+          translations = translations.map(t => BlogTranslationInput(t.language, t.title, t.excerpt, t.content)),
+          tags = tags,
+          createdAt = p.createdAt,
+          updatedAt = p.updatedAt
+        )
       }

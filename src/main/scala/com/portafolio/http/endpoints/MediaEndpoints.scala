@@ -10,15 +10,12 @@ import com.portafolio.service.{AuthService, MediaService}
 import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
-import sttp.tapir.generic.auto.*
 import sttp.tapir.server.ServerEndpoint
 
 /** Endpoints de media: presigned upload (flujo S3 directo) y gestión de archivos.
   *
   * Flujo de subida directa a S3:
-  *   1. `POST /admin/media/presign`  → URL pre-firmada + mediaId
-  *   2. Frontend hace `PUT` directo a S3 (sin pasar por el servidor)
-  *   3. `POST /admin/media/confirm`  → guarda metadatos en BD
+  *   1. `POST /admin/media/presign` → URL pre-firmada + mediaId 2. Frontend hace `PUT` directo a S3 (sin pasar por el servidor) 3. `POST /admin/media/confirm` → guarda metadatos en BD
   */
 object MediaEndpoints:
 
@@ -74,7 +71,7 @@ object MediaEndpoints:
 
   def serverEndpoints(
       mediaService: MediaService,
-      authService:  AuthService
+      authService: AuthService
   ): List[ServerEndpoint[Any, IO]] =
     val sec = AuthMiddleware.securityLogic(authService)
 
@@ -82,21 +79,17 @@ object MediaEndpoints:
       requestUpload.serverSecurityLogic(sec).serverLogic { _ => req =>
         mediaService.requestPresignedUpload(req).map(_.left.map(AuthMiddleware.toTapirError))
       },
-
       confirmUpload.serverSecurityLogic(sec).serverLogic { _ => req =>
         mediaService.confirmUpload(req).map(_.left.map(AuthMiddleware.toTapirError))
       },
-
       listMedia.serverSecurityLogic(sec).serverLogic { _ => input =>
         val (page, pageSize) = input
         val pg = Pagination(page.getOrElse(1), pageSize.getOrElse(50))
         mediaService.listAll(pg).map { case (items, _) => Right(items) }
       },
-
       getById.serverSecurityLogic(sec).serverLogic { _ => id =>
         mediaService.findById(id).map(_.left.map(AuthMiddleware.toTapirError))
       },
-
       deleteMedia.serverSecurityLogic(sec).serverLogic { _ => id =>
         mediaService.delete(id).map(_.left.map(AuthMiddleware.toTapirError))
       }

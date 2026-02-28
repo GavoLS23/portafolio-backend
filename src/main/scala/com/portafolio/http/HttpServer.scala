@@ -3,7 +3,7 @@ package com.portafolio.http
 import cats.effect.{IO, Resource}
 import cats.syntax.all.*
 import com.comcast.ip4s.*
-import com.portafolio.config.{AppConfig, ServerConfig}
+import com.portafolio.config.ServerConfig
 import com.portafolio.http.endpoints.*
 import com.portafolio.http.websocket.PreviewWebSocket
 import com.portafolio.service.*
@@ -11,7 +11,7 @@ import org.http4s.HttpApp
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits.*
 import org.http4s.server.Server
-import org.http4s.server.middleware.{CORS, CORSConfig, Logger as HttpLogger}
+import org.http4s.server.middleware.{CORS, Logger as HttpLogger}
 import org.typelevel.log4cats.Logger
 import sttp.tapir.server.http4s.Http4sServerInterpreter
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
@@ -22,28 +22,28 @@ import scala.concurrent.duration.*
 object HttpServer:
 
   def make(
-      config:          ServerConfig,
-      authService:     AuthService,
-      projectService:  ProjectService,
-      blogService:     BlogService,
-      mediaService:    MediaService,
-      techService:     TechnologyService
+      config: ServerConfig,
+      authService: AuthService,
+      projectService: ProjectService,
+      blogService: BlogService,
+      mediaService: MediaService,
+      techService: TechnologyService
   )(using logger: Logger[IO]): Resource[IO, Server] =
 
     // ── Recolectar todos los ServerEndpoints ──────────────────────────────
     val allEndpoints =
       AuthEndpoints.serverEndpoints(authService) ++
-      ProjectEndpoints.serverEndpoints(projectService, authService) ++
-      BlogEndpoints.serverEndpoints(blogService, authService) ++
-      MediaEndpoints.serverEndpoints(mediaService, authService) ++
-      TechnologyEndpoints.serverEndpoints(techService, authService)
+        ProjectEndpoints.serverEndpoints(projectService, authService) ++
+        BlogEndpoints.serverEndpoints(blogService, authService) ++
+        MediaEndpoints.serverEndpoints(mediaService, authService) ++
+        TechnologyEndpoints.serverEndpoints(techService, authService)
 
     // ── Swagger UI en /docs ───────────────────────────────────────────────
     val swaggerEndpoints = SwaggerInterpreter()
       .fromServerEndpoints[IO](allEndpoints, "Portfolio API", "1.0.0")
 
     // ── Convertir a Http4s routes ─────────────────────────────────────────
-    val apiRoutes     = Http4sServerInterpreter[IO]().toRoutes(allEndpoints)
+    val apiRoutes = Http4sServerInterpreter[IO]().toRoutes(allEndpoints)
     val swaggerRoutes = Http4sServerInterpreter[IO]().toRoutes(swaggerEndpoints)
 
     // ── CORS ──────────────────────────────────────────────────────────────

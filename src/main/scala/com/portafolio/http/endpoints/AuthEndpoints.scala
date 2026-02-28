@@ -3,12 +3,10 @@ package com.portafolio.http.endpoints
 import cats.effect.IO
 import com.portafolio.domain.auth.{LoginRequest, LoginResponse}
 import com.portafolio.domain.common.errors.ErrorResponse
-import com.portafolio.http.middleware.AuthMiddleware.TapirError
 import com.portafolio.service.AuthService
 import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
-import sttp.tapir.generic.auto.*
 import sttp.tapir.server.ServerEndpoint
 
 /** Endpoints de autenticación (públicos). */

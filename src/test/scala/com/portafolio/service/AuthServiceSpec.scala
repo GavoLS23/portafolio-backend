@@ -90,7 +90,7 @@ class AuthServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers:
     "rechazar un token inválido" in {
       authService.validateToken("token.invalido.xxx").asserting {
         case Left(AppError.Unauthorized(_)) => succeed
-        case other => fail(s"Resultado inesperado: $other")
+        case other                          => fail(s"Resultado inesperado: $other")
       }
     }
   }

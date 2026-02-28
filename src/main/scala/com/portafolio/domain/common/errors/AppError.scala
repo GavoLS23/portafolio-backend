@@ -5,8 +5,7 @@ import io.circe.generic.semiauto.*
 import sttp.model.StatusCode
 import sttp.tapir.Schema
 
-/** Errores de dominio que se propagan a través de la aplicación.
-  * Cada variante incluye el StatusCode HTTP correspondiente.
+/** Errores de dominio que se propagan a través de la aplicación. Cada variante incluye el StatusCode HTTP correspondiente.
   */
 sealed trait AppError:
   def message: String
@@ -43,11 +42,11 @@ final case class ErrorResponse(error: String, message: String, statusCode: Int)
 object ErrorResponse:
   def from(e: AppError): ErrorResponse =
     ErrorResponse(
-      error      = e.getClass.getSimpleName,
-      message    = e.message,
+      error = e.getClass.getSimpleName,
+      message = e.message,
       statusCode = e.httpStatus.code
     )
 
   given Encoder[ErrorResponse] = deriveEncoder
   given Decoder[ErrorResponse] = deriveDecoder
-  given Schema[ErrorResponse]  = Schema.derived
+  given Schema[ErrorResponse] = Schema.derived

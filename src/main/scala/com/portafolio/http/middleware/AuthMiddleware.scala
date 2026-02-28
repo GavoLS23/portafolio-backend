@@ -5,8 +5,6 @@ import com.portafolio.domain.auth.AuthenticatedUser
 import com.portafolio.domain.common.errors.{AppError, ErrorResponse}
 import com.portafolio.service.AuthService
 import sttp.model.StatusCode
-import sttp.tapir.json.circe.*
-import sttp.tapir.generic.auto.*
 
 /** Helpers de autenticación para los endpoints de Tapir.
   *
@@ -26,8 +24,7 @@ object AuthMiddleware:
   def toTapirError(err: AppError): TapirError =
     (err.httpStatus, ErrorResponse.from(err))
 
-  /** Función de seguridad reutilizable: valida el token Bearer y devuelve
-    * el usuario autenticado, o un error Tapir si el token es inválido.
+  /** Función de seguridad reutilizable: valida el token Bearer y devuelve el usuario autenticado, o un error Tapir si el token es inválido.
     */
   def securityLogic(
       authService: AuthService

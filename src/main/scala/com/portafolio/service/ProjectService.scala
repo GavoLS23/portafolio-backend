@@ -44,17 +44,15 @@ object ProjectService:
 
     def update(id: ProjectId, req: UpdateProjectRequest): IO[Either[AppError, ProjectResponse]] =
       for
-        slugConflict <- req.slug.traverse(slug =>
-                          repo.slugExists(slug, excludeId = Some(id))
-                        )
+        slugConflict <- req.slug.traverse(slug => repo.slugExists(slug, excludeId = Some(id)))
         result <- slugConflict.filter(identity) match
-                    case Some(true) =>
-                      IO.pure(Left(AppError.Conflict("El slug ya está en uso")))
-                    case _ =>
-                      repo.update(id, req).flatMap {
-                        case None    => IO.pure(Left(AppError.NotFound(s"Proyecto no encontrado: ${id.value}")))
-                        case Some(p) => toResponse(p).map(Right(_))
-                      }
+          case Some(true) =>
+            IO.pure(Left(AppError.Conflict("El slug ya está en uso")))
+          case _ =>
+            repo.update(id, req).flatMap {
+              case None    => IO.pure(Left(AppError.NotFound(s"Proyecto no encontrado: ${id.value}")))
+              case Some(p) => toResponse(p).map(Right(_))
+            }
       yield result
 
     def reorder(req: ReorderRequest): IO[Either[AppError, Unit]] =
@@ -67,21 +65,18 @@ object ProjectService:
       }
 
     private def toResponse(p: Project): IO[ProjectResponse] =
-      (repo.findTranslations(p.id), repo.findTechnologyIds(p.id)).mapN {
-        (translations, techIds) =>
-          ProjectResponse(
-            id               = p.id,
-            slug             = p.slug,
-            status           = p.status,
-            displayOrder     = p.displayOrder,
-            demoUrl          = p.demoUrl,
-            repositoryUrl    = p.repositoryUrl,
-            thumbnailMediaId = p.thumbnailMediaId,
-            translations     = translations.map(t =>
-              TranslationInput(t.language, t.title, t.description, t.longDescription)
-            ),
-            technologyIds    = techIds,
-            createdAt        = p.createdAt,
-            updatedAt        = p.updatedAt
-          )
+      (repo.findTranslations(p.id), repo.findTechnologyIds(p.id)).mapN { (translations, techIds) =>
+        ProjectResponse(
+          id = p.id,
+          slug = p.slug,
+          status = p.status,
+          displayOrder = p.displayOrder,
+          demoUrl = p.demoUrl,
+          repositoryUrl = p.repositoryUrl,
+          thumbnailMediaId = p.thumbnailMediaId,
+          translations = translations.map(t => TranslationInput(t.language, t.title, t.description, t.longDescription)),
+          technologyIds = techIds,
+          createdAt = p.createdAt,
+          updatedAt = p.updatedAt
+        )
       }

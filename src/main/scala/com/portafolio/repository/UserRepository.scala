@@ -22,17 +22,20 @@ object UserRepository:
   def make(xa: Transactor[IO]): UserRepository = new UserRepository:
 
     // ── Doobie Meta instances ────────────────────────────────────────────────
-    import com.portafolio.domain.common.Ids.UserId.given
 
     private def toUser(
-        id: UUID, email: String, hp: String, ca: Instant, ua: Instant
+        id: UUID,
+        email: String,
+        hp: String,
+        ca: Instant,
+        ua: Instant
     ): User =
       User(
-        id             = UserId(id),
-        email          = email,
+        id = UserId(id),
+        email = email,
         hashedPassword = hp,
-        createdAt      = ca,
-        updatedAt      = ua
+        createdAt = ca,
+        updatedAt = ua
       )
 
     def findById(id: UserId): IO[Option[User]] =
