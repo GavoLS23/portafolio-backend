@@ -1,0 +1,22 @@
+version: "3.9"
+
+# PostgreSQL se gestiona externamente (contenedor ya existente).
+# Este compose solo levanta el backend.
+#
+# Uso:
+#   docker-compose up -d          → levanta el backend
+#   docker-compose logs -f        → ver logs en tiempo real
+#   docker-compose down           → detiene el backend
+
+services:
+
+  backend:
+    build: .
+    container_name: portafolio_backend
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8080:8080"
+    # Apunta a tu PostgreSQL externo usando la red del host.
+    # Ajusta DB_URL en .env con el host/puerto correcto de tu contenedor.
+    network_mode: host   # en Linux; en macOS/Windows usa "host.docker.internal"
