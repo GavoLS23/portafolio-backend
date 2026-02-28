@@ -3,10 +3,27 @@
   <component name="ScalaCompilerConfiguration">
     <option name="separateProdTestSources" value="true" />
     <profile name="sbt 1" modules="backend,backend.main,backend.test,portafolio-backend" />
-    <profile name="sbt 3" modules="portafolio-backend.main,portafolio-backend.test">
+    <profile name="sbt 2" modules="portafolio-backend.test">
       <option name="deprecationWarnings" value="true" />
       <option name="uncheckedWarnings" value="true" />
       <option name="featureWarnings" value="true" />
+      <parameters>
+        <parameter value="-Wunused:all" />
+        <parameter value="-Xsemanticdb" />
+        <parameter value="-semanticdb-target" />
+        <parameter value="$PROJECT_DIR$/target/scala-3.3.1/test-meta" />
+      </parameters>
+    </profile>
+    <profile name="sbt 3" modules="portafolio-backend.main">
+      <option name="deprecationWarnings" value="true" />
+      <option name="uncheckedWarnings" value="true" />
+      <option name="featureWarnings" value="true" />
+      <parameters>
+        <parameter value="-Wunused:all" />
+        <parameter value="-Xsemanticdb" />
+        <parameter value="-semanticdb-target" />
+        <parameter value="$PROJECT_DIR$/target/scala-3.3.1/meta" />
+      </parameters>
     </profile>
   </component>
 </project>
