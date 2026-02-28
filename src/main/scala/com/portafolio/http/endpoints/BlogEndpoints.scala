@@ -94,26 +94,21 @@ object BlogEndpoints:
         val pg = Pagination(page.getOrElse(1), pageSize.getOrElse(20))
         blogService.listAll(onlyPublished = true, pg).map { case (posts, _) => Right(posts) }
       },
-
       getBySlug.serverLogic { slug =>
         blogService.getBySlug(slug).map(_.left.map(AuthMiddleware.toTapirError))
       },
-
       listAdmin.serverSecurityLogic(sec).serverLogic { _ => input =>
         val (page, pageSize) = input
         val pg = Pagination(page.getOrElse(1), pageSize.getOrElse(20))
         blogService.listAll(onlyPublished = false, pg).map { case (posts, _) => Right(posts) }
       },
-
       create.serverSecurityLogic(sec).serverLogic { _ => req =>
         blogService.create(req).map(_.left.map(AuthMiddleware.toTapirError))
       },
-
       update.serverSecurityLogic(sec).serverLogic { _ => input =>
         val (id, req) = input
         blogService.update(id, req).map(_.left.map(AuthMiddleware.toTapirError))
       },
-
       delete.serverSecurityLogic(sec).serverLogic { _ => id =>
         blogService.delete(id).map(_.left.map(AuthMiddleware.toTapirError))
       }

@@ -91,7 +91,7 @@ object ProjectEndpoints:
 
   def serverEndpoints(
       projectService: ProjectService,
-      authService:    AuthService
+      authService: AuthService
   ): List[ServerEndpoint[Any, IO]] =
     val sec = AuthMiddleware.securityLogic(authService)
 
@@ -100,7 +100,6 @@ object ProjectEndpoints:
       listPublic.serverLogic { _ =>
         projectService.listAll(onlyPublished = true).map(Right(_))
       },
-
       getBySlug.serverLogic { slug =>
         projectService.getBySlug(slug).map(_.left.map(AuthMiddleware.toTapirError))
       },
@@ -109,7 +108,6 @@ object ProjectEndpoints:
       listAdmin.serverSecurityLogic(sec).serverLogic { _ => _ =>
         projectService.listAll(onlyPublished = false).map(Right(_))
       },
-
       create.serverSecurityLogic(sec).serverLogic { _ => req =>
         projectService.create(req).map(_.left.map(AuthMiddleware.toTapirError))
       },
@@ -118,12 +116,10 @@ object ProjectEndpoints:
       reorder.serverSecurityLogic(sec).serverLogic { _ => req =>
         projectService.reorder(req).map(_.left.map(AuthMiddleware.toTapirError))
       },
-
       update.serverSecurityLogic(sec).serverLogic { _ => input =>
         val (id, req) = input
         projectService.update(id, req).map(_.left.map(AuthMiddleware.toTapirError))
       },
-
       delete.serverSecurityLogic(sec).serverLogic { _ => id =>
         projectService.delete(id).map(_.left.map(AuthMiddleware.toTapirError))
       }

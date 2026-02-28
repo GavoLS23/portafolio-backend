@@ -26,8 +26,7 @@ object AuthMiddleware:
   def toTapirError(err: AppError): TapirError =
     (err.httpStatus, ErrorResponse.from(err))
 
-  /** Función de seguridad reutilizable: valida el token Bearer y devuelve
-    * el usuario autenticado, o un error Tapir si el token es inválido.
+  /** Función de seguridad reutilizable: valida el token Bearer y devuelve el usuario autenticado, o un error Tapir si el token es inválido.
     */
   def securityLogic(
       authService: AuthService

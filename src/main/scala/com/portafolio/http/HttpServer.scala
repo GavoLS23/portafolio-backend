@@ -22,28 +22,28 @@ import scala.concurrent.duration.*
 object HttpServer:
 
   def make(
-      config:          ServerConfig,
-      authService:     AuthService,
-      projectService:  ProjectService,
-      blogService:     BlogService,
-      mediaService:    MediaService,
-      techService:     TechnologyService
+      config: ServerConfig,
+      authService: AuthService,
+      projectService: ProjectService,
+      blogService: BlogService,
+      mediaService: MediaService,
+      techService: TechnologyService
   )(using logger: Logger[IO]): Resource[IO, Server] =
 
     // ── Recolectar todos los ServerEndpoints ──────────────────────────────
     val allEndpoints =
       AuthEndpoints.serverEndpoints(authService) ++
-      ProjectEndpoints.serverEndpoints(projectService, authService) ++
-      BlogEndpoints.serverEndpoints(blogService, authService) ++
-      MediaEndpoints.serverEndpoints(mediaService, authService) ++
-      TechnologyEndpoints.serverEndpoints(techService, authService)
+        ProjectEndpoints.serverEndpoints(projectService, authService) ++
+        BlogEndpoints.serverEndpoints(blogService, authService) ++
+        MediaEndpoints.serverEndpoints(mediaService, authService) ++
+        TechnologyEndpoints.serverEndpoints(techService, authService)
 
     // ── Swagger UI en /docs ───────────────────────────────────────────────
     val swaggerEndpoints = SwaggerInterpreter()
       .fromServerEndpoints[IO](allEndpoints, "Portfolio API", "1.0.0")
 
     // ── Convertir a Http4s routes ─────────────────────────────────────────
-    val apiRoutes     = Http4sServerInterpreter[IO]().toRoutes(allEndpoints)
+    val apiRoutes = Http4sServerInterpreter[IO]().toRoutes(allEndpoints)
     val swaggerRoutes = Http4sServerInterpreter[IO]().toRoutes(swaggerEndpoints)
 
     // ── CORS ──────────────────────────────────────────────────────────────

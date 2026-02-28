@@ -9,10 +9,8 @@ import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
 
 /** Newtypes para IDs usando opaque types de Scala 3.
   *
-  * NOTA: Las instancias de Encoder/Decoder/Meta se construyen de forma directa
-  * (sin pasar por `Encoder[UUID]` / `Decoder[UUID]` / `Meta[UUID]`) porque dentro
-  * del companion de un opaque type el tipo es transparente, lo que haría que
-  * `Encoder[UUID]` resuelva a `given_Encoder_XxxId` creando un bucle infinito.
+  * NOTA: Las instancias de Encoder/Decoder/Meta se construyen de forma directa (sin pasar por `Encoder[UUID]` / `Decoder[UUID]` / `Meta[UUID]`) porque dentro del companion de un opaque type el tipo
+  * es transparente, lo que haría que `Encoder[UUID]` resuelva a `given_Encoder_XxxId` creando un bucle infinito.
   */
 object Ids:
 
@@ -20,7 +18,7 @@ object Ids:
   opaque type UserId = UUID
   object UserId:
     def apply(uuid: UUID): UserId = uuid
-    def generate(): UserId        = UUID.randomUUID()
+    def generate(): UserId = UUID.randomUUID()
     def fromString(s: String): Either[String, UserId] =
       Try(UUID.fromString(s)).toEither.left.map(_.getMessage)
     extension (id: UserId) def value: UUID = id
@@ -30,10 +28,7 @@ object Ids:
 
     given Decoder[UserId] =
       Decoder.instance[UserId] { (c: HCursor) =>
-        c.as[String].flatMap(s =>
-          Try(UserId(UUID.fromString(s))).toEither
-            .left.map(e => DecodingFailure(e.getMessage, c.history))
-        )
+        c.as[String].flatMap(s => Try(UserId(UUID.fromString(s))).toEither.left.map(e => DecodingFailure(e.getMessage, c.history)))
       }
 
     given Meta[UserId] =
@@ -54,7 +49,7 @@ object Ids:
   opaque type ProjectId = UUID
   object ProjectId:
     def apply(uuid: UUID): ProjectId = uuid
-    def generate(): ProjectId        = UUID.randomUUID()
+    def generate(): ProjectId = UUID.randomUUID()
     def fromString(s: String): Either[String, ProjectId] =
       Try(UUID.fromString(s)).toEither.left.map(_.getMessage)
     extension (id: ProjectId) def value: UUID = id
@@ -64,10 +59,7 @@ object Ids:
 
     given Decoder[ProjectId] =
       Decoder.instance[ProjectId] { (c: HCursor) =>
-        c.as[String].flatMap(s =>
-          Try(ProjectId(UUID.fromString(s))).toEither
-            .left.map(e => DecodingFailure(e.getMessage, c.history))
-        )
+        c.as[String].flatMap(s => Try(ProjectId(UUID.fromString(s))).toEither.left.map(e => DecodingFailure(e.getMessage, c.history)))
       }
 
     given Meta[ProjectId] =
@@ -88,7 +80,7 @@ object Ids:
   opaque type BlogPostId = UUID
   object BlogPostId:
     def apply(uuid: UUID): BlogPostId = uuid
-    def generate(): BlogPostId        = UUID.randomUUID()
+    def generate(): BlogPostId = UUID.randomUUID()
     def fromString(s: String): Either[String, BlogPostId] =
       Try(UUID.fromString(s)).toEither.left.map(_.getMessage)
     extension (id: BlogPostId) def value: UUID = id
@@ -98,10 +90,7 @@ object Ids:
 
     given Decoder[BlogPostId] =
       Decoder.instance[BlogPostId] { (c: HCursor) =>
-        c.as[String].flatMap(s =>
-          Try(BlogPostId(UUID.fromString(s))).toEither
-            .left.map(e => DecodingFailure(e.getMessage, c.history))
-        )
+        c.as[String].flatMap(s => Try(BlogPostId(UUID.fromString(s))).toEither.left.map(e => DecodingFailure(e.getMessage, c.history)))
       }
 
     given Meta[BlogPostId] =
@@ -122,7 +111,7 @@ object Ids:
   opaque type MediaId = UUID
   object MediaId:
     def apply(uuid: UUID): MediaId = uuid
-    def generate(): MediaId        = UUID.randomUUID()
+    def generate(): MediaId = UUID.randomUUID()
     def fromString(s: String): Either[String, MediaId] =
       Try(UUID.fromString(s)).toEither.left.map(_.getMessage)
     extension (id: MediaId) def value: UUID = id
@@ -132,10 +121,7 @@ object Ids:
 
     given Decoder[MediaId] =
       Decoder.instance[MediaId] { (c: HCursor) =>
-        c.as[String].flatMap(s =>
-          Try(MediaId(UUID.fromString(s))).toEither
-            .left.map(e => DecodingFailure(e.getMessage, c.history))
-        )
+        c.as[String].flatMap(s => Try(MediaId(UUID.fromString(s))).toEither.left.map(e => DecodingFailure(e.getMessage, c.history)))
       }
 
     given Meta[MediaId] =
@@ -156,7 +142,7 @@ object Ids:
   opaque type TechnologyId = UUID
   object TechnologyId:
     def apply(uuid: UUID): TechnologyId = uuid
-    def generate(): TechnologyId        = UUID.randomUUID()
+    def generate(): TechnologyId = UUID.randomUUID()
     def fromString(s: String): Either[String, TechnologyId] =
       Try(UUID.fromString(s)).toEither.left.map(_.getMessage)
     extension (id: TechnologyId) def value: UUID = id
@@ -166,10 +152,7 @@ object Ids:
 
     given Decoder[TechnologyId] =
       Decoder.instance[TechnologyId] { (c: HCursor) =>
-        c.as[String].flatMap(s =>
-          Try(TechnologyId(UUID.fromString(s))).toEither
-            .left.map(e => DecodingFailure(e.getMessage, c.history))
-        )
+        c.as[String].flatMap(s => Try(TechnologyId(UUID.fromString(s))).toEither.left.map(e => DecodingFailure(e.getMessage, c.history)))
       }
 
     given Meta[TechnologyId] =

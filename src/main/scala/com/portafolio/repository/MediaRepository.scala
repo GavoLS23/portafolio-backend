@@ -16,18 +16,18 @@ trait MediaRepository:
   def findAll(limit: Int, offset: Int): IO[List[Media]]
   def countAll: IO[Long]
   def create(
-      mediaId:   MediaId,
-      s3Key:     String,
-      s3Bucket:  String,
-      filename:  String,
-      mimeType:  String,
+      mediaId: MediaId,
+      s3Key: String,
+      s3Bucket: String,
+      filename: String,
+      mimeType: String,
       mediaType: MediaType,
       sizeBytes: Long
   ): IO[Media]
   def confirmUpload(
-      id:        MediaId,
-      widthPx:   Option[Int],
-      heightPx:  Option[Int],
+      id: MediaId,
+      widthPx: Option[Int],
+      heightPx: Option[Int],
       durationS: Option[Int]
   ): IO[Option[Media]]
   def delete(id: MediaId): IO[Option[String]]
@@ -39,24 +39,22 @@ object MediaRepository:
     import com.portafolio.domain.common.Ids.MediaId.given
 
     // Doobie Meta para MediaType
-    given Meta[MediaType] = Meta[String].timap(
-      s => MediaType.fromString(s).getOrElse(MediaType.Image)
-    )(_.value)
+    given Meta[MediaType] = Meta[String].timap(s => MediaType.fromString(s).getOrElse(MediaType.Image))(_.value)
 
     private type MediaRow = (UUID, String, String, String, String, String, Long, Option[Int], Option[Int], Option[Int], Instant)
 
     private def toMedia(row: MediaRow): Media =
       val (id, s3Key, s3Bucket, filename, mimeType, mt, sizeBytes, w, h, d, ca) = row
       Media(
-        id        = MediaId(id),
-        s3Key     = s3Key,
-        s3Bucket  = s3Bucket,
-        filename  = filename,
-        mimeType  = mimeType,
+        id = MediaId(id),
+        s3Key = s3Key,
+        s3Bucket = s3Bucket,
+        filename = filename,
+        mimeType = mimeType,
         mediaType = MediaType.fromString(mt).getOrElse(MediaType.Image),
         sizeBytes = sizeBytes,
-        widthPx   = w,
-        heightPx  = h,
+        widthPx = w,
+        heightPx = h,
         durationS = d,
         createdAt = ca
       )
@@ -87,8 +85,13 @@ object MediaRepository:
         .transact(xa)
 
     def create(
-        mediaId: MediaId, s3Key: String, s3Bucket: String,
-        filename: String, mimeType: String, mediaType: MediaType, sizeBytes: Long
+        mediaId: MediaId,
+        s3Key: String,
+        s3Bucket: String,
+        filename: String,
+        mimeType: String,
+        mediaType: MediaType,
+        sizeBytes: Long
     ): IO[Media] =
       sql"""
         INSERT INTO media (id, s3_key, s3_bucket, filename, mime_type, media_type, size_bytes)

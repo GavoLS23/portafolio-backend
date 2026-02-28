@@ -74,8 +74,6 @@ object TechnologyRepository:
         .transact(xa)
 
     def delete(id: TechnologyId): IO[Boolean] =
-      sql"DELETE FROM technologies WHERE id = ${id.value}"
-        .update
-        .run
+      sql"DELETE FROM technologies WHERE id = ${id.value}".update.run
         .map(_ > 0)
         .transact(xa)

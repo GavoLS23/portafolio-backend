@@ -28,7 +28,8 @@ object TechnologyService:
       }
 
     def create(req: CreateTechnologyRequest): IO[Either[AppError, TechnologyResponse]] =
-      repo.create(req.name, req.iconUrl)
+      repo
+        .create(req.name, req.iconUrl)
         .map(t => Right(toResponse(t)))
         .handleErrorWith { _ =>
           IO.pure(Left(AppError.Conflict(s"La tecnología '${req.name}' ya existe")))

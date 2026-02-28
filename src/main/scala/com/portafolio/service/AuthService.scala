@@ -28,7 +28,7 @@ object AuthService:
 
   def make(
       userRepo: UserRepository,
-      config:   JwtConfig
+      config: JwtConfig
   )(using logger: Logger[IO]): AuthService = new AuthService:
 
     private val algorithm = JwtAlgorithm.HS256
@@ -42,10 +42,10 @@ object AuthService:
         case Some(user) =>
           val expiresAt = Instant.now.plusSeconds(config.expirationHours * 3600)
           val claim = JwtClaim(
-            subject    = Some(user.id.value.toString),
-            content    = s"""{"email":"${user.email}"}""",
+            subject = Some(user.id.value.toString),
+            content = s"""{"email":"${user.email}"}""",
             expiration = Some(expiresAt.getEpochSecond),
-            issuedAt   = Some(Instant.now.getEpochSecond)
+            issuedAt = Some(Instant.now.getEpochSecond)
           )
           val token = Jwt.encode(claim, config.secret.value, algorithm)
           Right(LoginResponse(token = token, expiresAt = expiresAt))
@@ -56,21 +56,21 @@ object AuthService:
         Jwt.decode(token, config.secret.value, Seq(algorithm))
       ).map { claim =>
         (for
-          sub   <- claim.subject.toRight("Token sin subject")
-          uuid  <- Try(java.util.UUID.fromString(sub)).toEither.left.map(_.getMessage)
+          sub <- claim.subject.toRight("Token sin subject")
+          uuid <- Try(java.util.UUID.fromString(sub)).toEither.left.map(_.getMessage)
           email <- io.circe.parser
-                     .parse(claim.content)
-                     .flatMap(_.hcursor.get[String]("email"))
-                     .left.map(_.getMessage)
-        yield AuthenticatedUser(UserId(uuid), email))
-          .left.map(msg => AppError.Unauthorized(msg))
-      }.recover {
-        case _: Exception => Left(AppError.Unauthorized("Token inválido o expirado"))
+            .parse(claim.content)
+            .flatMap(_.hcursor.get[String]("email"))
+            .left
+            .map(_.getMessage)
+        yield AuthenticatedUser(UserId(uuid), email)).left.map(msg => AppError.Unauthorized(msg))
+      }.recover { case _: Exception =>
+        Left(AppError.Unauthorized("Token inválido o expirado"))
       }
 
     def seedAdmin(email: String, rawPassword: String): IO[Unit] =
       userRepo.existsAny.flatMap {
-        case true  => logger.info("Admin ya existe, omitiendo seed")
+        case true => logger.info("Admin ya existe, omitiendo seed")
         case false =>
           val hashed = BCrypt.hashpw(rawPassword, BCrypt.gensalt(12))
           userRepo.create(email, hashed).flatMap { user =>

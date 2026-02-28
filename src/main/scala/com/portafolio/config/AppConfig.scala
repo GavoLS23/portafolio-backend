@@ -6,58 +6,55 @@ import ciris.*
 
 /** Configuración de base de datos (HikariCP + Doobie). */
 final case class DbConfig(
-    url:      String,
-    user:     String,
+    url: String,
+    user: String,
     password: Secret[String],
-    schema:   String,
+    schema: String,
     poolSize: Int
 )
 
 /** Configuración del servidor JWT. */
 final case class JwtConfig(
-    secret:          Secret[String],
+    secret: Secret[String],
     expirationHours: Long
 )
 
 /** Configuración de AWS / S3. */
 final case class AwsConfig(
-    accessKeyId:     Secret[String],
+    accessKeyId: Secret[String],
     secretAccessKey: Secret[String],
-    region:          String,
-    s3Bucket:        String
+    region: String,
+    s3Bucket: String
 )
 
 /** Configuración del servidor HTTP. */
 final case class ServerConfig(
-    host:           String,
-    port:           Int,
+    host: String,
+    port: Int,
     allowedOrigins: List[String]
 )
 
 /** Configuración del usuario administrador inicial. */
 final case class AdminConfig(
-    email:    String,
+    email: String,
     password: Secret[String]
 )
 
 /** Configuración global de la aplicación leída desde variables de entorno.
   *
-  * Uso: {{{
-  *   AppConfig.load.flatMap { config => ... }
-  * }}}
+  * Uso: {{{ AppConfig.load.flatMap { config => ... } }}}
   */
 final case class AppConfig(
-    db:     DbConfig,
-    jwt:    JwtConfig,
-    aws:    AwsConfig,
+    db: DbConfig,
+    jwt: JwtConfig,
+    aws: AwsConfig,
     server: ServerConfig,
-    admin:  AdminConfig
+    admin: AdminConfig
 )
 
 object AppConfig:
 
-  /** Carga la configuración desde variables de entorno usando Ciris.
-    * Falla en startup si alguna variable obligatoria no está definida.
+  /** Carga la configuración desde variables de entorno usando Ciris. Falla en startup si alguna variable obligatoria no está definida.
     */
   def load: IO[AppConfig] =
     (
@@ -88,37 +85,48 @@ object AppConfig:
       env("ADMIN_PASSWORD").secret
     ).parMapN {
       (
-        dbUrl, dbUser, dbPass, dbSchema, poolSize,
-        jwtSecret, jwtExpH,
-        awsKey, awsSecret, awsRegion, s3Bucket,
-        serverHost, serverPort, origins,
-        adminEmail, adminPass
+          dbUrl,
+          dbUser,
+          dbPass,
+          dbSchema,
+          poolSize,
+          jwtSecret,
+          jwtExpH,
+          awsKey,
+          awsSecret,
+          awsRegion,
+          s3Bucket,
+          serverHost,
+          serverPort,
+          origins,
+          adminEmail,
+          adminPass
       ) =>
         AppConfig(
           db = DbConfig(
-            url      = dbUrl,
-            user     = dbUser,
+            url = dbUrl,
+            user = dbUser,
             password = dbPass,
-            schema   = dbSchema,
+            schema = dbSchema,
             poolSize = poolSize
           ),
           jwt = JwtConfig(
-            secret          = jwtSecret,
+            secret = jwtSecret,
             expirationHours = jwtExpH
           ),
           aws = AwsConfig(
-            accessKeyId     = awsKey,
+            accessKeyId = awsKey,
             secretAccessKey = awsSecret,
-            region          = awsRegion,
-            s3Bucket        = s3Bucket
+            region = awsRegion,
+            s3Bucket = s3Bucket
           ),
           server = ServerConfig(
-            host           = serverHost,
-            port           = serverPort,
+            host = serverHost,
+            port = serverPort,
             allowedOrigins = origins.split(",").map(_.trim).toList
           ),
           admin = AdminConfig(
-            email    = adminEmail,
+            email = adminEmail,
             password = adminPass
           )
         )

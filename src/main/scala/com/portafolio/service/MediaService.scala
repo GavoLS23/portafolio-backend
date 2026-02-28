@@ -12,9 +12,7 @@ import com.portafolio.repository.MediaRepository
 /** Servicio de media: gestiona el flujo de subida a S3 y la metadata en BD.
   *
   * Flujo de subida directo:
-  *   1. Frontend pide URL pre-firmada → `requestPresignedUpload`
-  *   2. Frontend hace PUT directo a S3
-  *   3. Frontend confirma la subida → `confirmUpload`
+  *   1. Frontend pide URL pre-firmada → `requestPresignedUpload` 2. Frontend hace PUT directo a S3 3. Frontend confirma la subida → `confirmUpload`
   */
 trait MediaService:
   def requestPresignedUpload(req: PresignedUploadRequest): IO[Either[AppError, PresignedUploadResponse]]
@@ -28,20 +26,24 @@ object MediaService:
   def make(mediaRepo: MediaRepository, s3: S3Service): MediaService = new MediaService:
 
     def requestPresignedUpload(req: PresignedUploadRequest): IO[Either[AppError, PresignedUploadResponse]] =
-      s3.generatePresignedPutUrl(req).flatMap { presigned =>
-        // Guarda el registro en BD antes de la subida (estado "pendiente")
-        mediaRepo.create(
-          mediaId   = presigned.mediaId,
-          s3Key     = presigned.s3Key,
-          s3Bucket  = s3.bucket,
-          filename  = req.filename,
-          mimeType  = req.mimeType,
-          mediaType = req.mediaType,
-          sizeBytes = req.sizeBytes
-        ).map(_ => Right(presigned))
-      }.handleErrorWith { err =>
-        IO.pure(Left(AppError.InternalError(s"Error generando URL de subida: ${err.getMessage}")))
-      }
+      s3.generatePresignedPutUrl(req)
+        .flatMap { presigned =>
+          // Guarda el registro en BD antes de la subida (estado "pendiente")
+          mediaRepo
+            .create(
+              mediaId = presigned.mediaId,
+              s3Key = presigned.s3Key,
+              s3Bucket = s3.bucket,
+              filename = req.filename,
+              mimeType = req.mimeType,
+              mediaType = req.mediaType,
+              sizeBytes = req.sizeBytes
+            )
+            .map(_ => Right(presigned))
+        }
+        .handleErrorWith { err =>
+          IO.pure(Left(AppError.InternalError(s"Error generando URL de subida: ${err.getMessage}")))
+        }
 
     def confirmUpload(req: ConfirmUploadRequest): IO[Either[AppError, MediaResponse]] =
       mediaRepo.confirmUpload(req.mediaId, req.widthPx, req.heightPx, req.durationS).map {
@@ -69,14 +71,14 @@ object MediaService:
 
     private def toResponse(m: Media): MediaResponse =
       MediaResponse(
-        id        = m.id,
-        url       = s3.publicUrl(m.s3Key),
-        filename  = m.filename,
-        mimeType  = m.mimeType,
+        id = m.id,
+        url = s3.publicUrl(m.s3Key),
+        filename = m.filename,
+        mimeType = m.mimeType,
         mediaType = m.mediaType,
         sizeBytes = m.sizeBytes,
-        widthPx   = m.widthPx,
-        heightPx  = m.heightPx,
+        widthPx = m.widthPx,
+        heightPx = m.heightPx,
         durationS = m.durationS,
         createdAt = m.createdAt
       )
