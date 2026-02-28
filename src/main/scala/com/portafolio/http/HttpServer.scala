@@ -7,7 +7,7 @@ import com.portafolio.config.ServerConfig
 import com.portafolio.http.endpoints.*
 import com.portafolio.http.websocket.PreviewWebSocket
 import com.portafolio.service.*
-import org.http4s.HttpApp
+import org.http4s.{HttpApp, HttpRoutes}
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits.*
 import org.http4s.server.Server
@@ -18,7 +18,12 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
 import scala.concurrent.duration.*
 
-/** Ensambla todos los endpoints, middlewares y levanta el servidor Ember. */
+/** Ensambla todos los endpoints, middlewares y levanta el servidor Ember.
+  *
+  * La Swagger UI está disponible en la raíz `/`.
+  *
+  * En el ambiente de desarrollo se pueden pasar rutas extra (`devRoutes`) para gestionar archivos locales (upload/serve). En producción se omiten pasando `None`.
+  */
 object HttpServer:
 
   def make(
@@ -27,10 +32,11 @@ object HttpServer:
       projectService: ProjectService,
       blogService: BlogService,
       mediaService: MediaService,
-      techService: TechnologyService
+      techService: TechnologyService,
+      devRoutes: Option[HttpRoutes[IO]] = None
   )(using logger: Logger[IO]): Resource[IO, Server] =
 
-    // ── Recolectar todos los ServerEndpoints ──────────────────────────────
+    // ── Endpoints Tapir ───────────────────────────────────────────────────
     val allEndpoints =
       AuthEndpoints.serverEndpoints(authService) ++
         ProjectEndpoints.serverEndpoints(projectService, authService) ++
@@ -38,9 +44,9 @@ object HttpServer:
         MediaEndpoints.serverEndpoints(mediaService, authService) ++
         TechnologyEndpoints.serverEndpoints(techService, authService)
 
-    // ── Swagger UI en /docs ───────────────────────────────────────────────
-    val swaggerEndpoints = SwaggerInterpreter()
-      .fromServerEndpoints[IO](allEndpoints, "Portfolio API", "1.0.0")
+    // ── Swagger UI en "/" ─────────────────────────────────────────────────
+    val swaggerEndpoints =
+      SwaggerInterpreter(swaggerUIOptions = sttp.tapir.swagger.SwaggerUIOptions.default.copy(pathPrefix = List.empty)).fromServerEndpoints[IO](allEndpoints, "Portfolio API", "1.0.0")
 
     // ── Convertir a Http4s routes ─────────────────────────────────────────
     val apiRoutes = Http4sServerInterpreter[IO]().toRoutes(allEndpoints)
@@ -52,8 +58,6 @@ object HttpServer:
       .withAllowCredentials(true)
       .withMaxAge(1.day)
 
-    // ── WebSocket (se añade fuera de tapir) ───────────────────────────────
-    // Se instancia dentro del Resource para obtener el WebSocketBuilder2
     EmberServerBuilder
       .default[IO]
       .withHost(Host.fromString(config.host).getOrElse(host"0.0.0.0"))
@@ -61,10 +65,13 @@ object HttpServer:
       .withHttpWebSocketApp { wsBuilder =>
         val wsRoutes = PreviewWebSocket.routes(authService, wsBuilder)
 
+        // Las rutas de desarrollo (upload/serve local) se montan solo si están presentes
+        val extraRoutes = devRoutes.getOrElse(HttpRoutes.empty[IO])
+
         val app: HttpApp[IO] =
           corsPolicy.apply(
             HttpLogger.httpApp(logHeaders = true, logBody = false)(
-              (wsRoutes <+> apiRoutes <+> swaggerRoutes).orNotFound
+              (extraRoutes <+> wsRoutes <+> apiRoutes <+> swaggerRoutes).orNotFound
             )
           )
         app

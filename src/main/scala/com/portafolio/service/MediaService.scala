@@ -6,13 +6,14 @@ import com.portafolio.domain.common.Ids.MediaId
 import com.portafolio.domain.common.errors.AppError
 import com.portafolio.domain.common.Pagination
 import com.portafolio.domain.media.*
-import com.portafolio.infrastructure.aws.S3Service
+import com.portafolio.infrastructure.storage.StorageService
 import com.portafolio.repository.MediaRepository
 
-/** Servicio de media: gestiona el flujo de subida a S3 y la metadata en BD.
+/** Servicio de media: gestiona el flujo de subida de archivos y la metadata en BD.
   *
-  * Flujo de subida directo:
-  *   1. Frontend pide URL pre-firmada → `requestPresignedUpload` 2. Frontend hace PUT directo a S3 3. Frontend confirma la subida → `confirmUpload`
+  * El flujo es idéntico independientemente del ambiente:
+  *   1. El frontend solicita una URL de subida → `requestPresignedUpload`. 2. El frontend hace `PUT` directo a esa URL (S3 en producción, backend en desarrollo). 3. El frontend confirma la subida →
+  *      `confirmUpload`.
   */
 trait MediaService:
   def requestPresignedUpload(req: PresignedUploadRequest): IO[Either[AppError, PresignedUploadResponse]]
@@ -23,17 +24,18 @@ trait MediaService:
 
 object MediaService:
 
-  def make(mediaRepo: MediaRepository, s3: S3Service): MediaService = new MediaService:
+  def make(mediaRepo: MediaRepository, storage: StorageService): MediaService = new MediaService:
 
     def requestPresignedUpload(req: PresignedUploadRequest): IO[Either[AppError, PresignedUploadResponse]] =
-      s3.generatePresignedPutUrl(req)
+      storage
+        .generatePresignedPutUrl(req)
         .flatMap { presigned =>
-          // Guarda el registro en BD antes de la subida (estado "pendiente")
+          // Persiste el registro en BD antes de la subida (estado "pendiente")
           mediaRepo
             .create(
               mediaId = presigned.mediaId,
               s3Key = presigned.s3Key,
-              s3Bucket = s3.bucket,
+              s3Bucket = storage.bucket,
               filename = req.filename,
               mimeType = req.mimeType,
               mediaType = req.mediaType,
@@ -66,13 +68,13 @@ object MediaService:
     def delete(id: MediaId): IO[Either[AppError, Unit]] =
       mediaRepo.delete(id).flatMap {
         case None      => IO.pure(Left(AppError.NotFound(s"Media no encontrada: ${id.value}")))
-        case Some(key) => s3.deleteObject(key).map(Right(_))
+        case Some(key) => storage.deleteObject(key).map(Right(_))
       }
 
     private def toResponse(m: Media): MediaResponse =
       MediaResponse(
         id = m.id,
-        url = s3.publicUrl(m.s3Key),
+        url = storage.publicUrl(m.s3Key),
         filename = m.filename,
         mimeType = m.mimeType,
         mediaType = m.mediaType,

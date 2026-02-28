@@ -1,10 +1,12 @@
 package com.portafolio
 
 import cats.effect.{ExitCode, IO, IOApp, Resource}
-import com.portafolio.config.AppConfig
+import com.portafolio.config.{AppConfig, StorageConfig}
 import com.portafolio.http.HttpServer
+import com.portafolio.http.routes.LocalUploadRoutes
 import com.portafolio.infrastructure.aws.S3Service
 import com.portafolio.infrastructure.db.Database
+import com.portafolio.infrastructure.storage.{LocalStorageService, StorageService}
 import com.portafolio.repository.*
 import com.portafolio.service.*
 import org.typelevel.log4cats.Logger
@@ -12,9 +14,12 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 /** Punto de entrada de la aplicación.
   *
-  * Secuencia de arranque (todo dentro del Resource):
-  *   1. Cargar configuración desde variables de entorno (Ciris) 2. Crear pool de conexiones HikariCP 3. Ejecutar migraciones Flyway (crea schema si no existe) 4. Inicializar cliente AWS S3 5. Crear
-  *      seed del admin si la BD está vacía 6. Levantar el servidor HTTP (Ember)
+  * Secuencia de arranque:
+  *   1. Carga configuración desde variables de entorno (Ciris). 2. Crea el pool de conexiones HikariCP. 3. Ejecuta migraciones Flyway (crea el schema si no existe). 4. Inicializa el servicio de
+  *      almacenamiento según `APP_ENV`:
+  *      - `development` → [[LocalStorageService]] (disco local).
+  *      - `production` → [[S3Service]] (AWS S3).
+  *      5. Crea el seed del admin si la BD está vacía. 6. Levanta el servidor HTTP Ember.
   */
 object Main extends IOApp:
 
@@ -24,16 +29,20 @@ object Main extends IOApp:
     for
       _ <- logger.info("Iniciando Portafolio Backend...")
       config <- AppConfig.load
-      _ <- logger.info(s"Configuración cargada. Puerto: ${config.server.port}")
+      _ <- logger.info(s"Configuración cargada. Ambiente: ${envLabel(config.storage)}. Puerto: ${config.server.port}")
       code <- startServer(config)
     yield code
+
+  private def envLabel(s: StorageConfig): String = s match
+    case _: StorageConfig.Local => "development (almacenamiento local)"
+    case _: StorageConfig.S3    => "production (AWS S3)"
 
   private def startServer(config: AppConfig): IO[ExitCode] =
     appResource(config)
       .use { server =>
         for
           _ <- logger.info(s"Servidor listo en http://${server.address}")
-          _ <- logger.info("Swagger UI disponible en /docs")
+          _ <- logger.info("Swagger UI disponible en http://${server.address}/")
           _ <- IO.never
         yield ExitCode.Success
       }
@@ -45,10 +54,17 @@ object Main extends IOApp:
     for
       // ── Infraestructura ──────────────────────────────────────────────────
       xa <- Database.makeTransactor(config.db)
-      s3 <- S3Service.make(config.aws)
 
       // ── Migraciones (antes de crear los servicios) ───────────────────────
       _ <- Resource.eval(Database.migrate(config.db))
+
+      // ── Servicio de almacenamiento (dev vs prod) ──────────────────────────
+      storage <- storageResource(config.storage)
+
+      // ── Rutas extra para desarrollo (upload/serve de archivos locales) ────
+      devRoutes = config.storage match
+        case StorageConfig.Local(uploadsDir, _) => Some(LocalUploadRoutes.make(uploadsDir))
+        case _: StorageConfig.S3                => None
 
       // ── Repositories ─────────────────────────────────────────────────────
       userRepo = UserRepository.make(xa)
@@ -61,10 +77,10 @@ object Main extends IOApp:
       authService = AuthService.make(userRepo, config.jwt)
       projectSvc = ProjectService.make(projRepo)
       blogSvc = BlogService.make(blogRepo)
-      mediaSvc = MediaService.make(mediaRepo, s3)
+      mediaSvc = MediaService.make(mediaRepo, storage)
       techSvc = TechnologyService.make(techRepo)
 
-      // ── Seed admin inicial (authService ya está en scope) ─────────────────
+      // ── Seed del admin inicial ────────────────────────────────────────────
       _ <- Resource.eval(
         authService.seedAdmin(config.admin.email, config.admin.password.value)
       )
@@ -76,6 +92,15 @@ object Main extends IOApp:
         projectSvc,
         blogSvc,
         mediaSvc,
-        techSvc
+        techSvc,
+        devRoutes
       )
     yield server
+
+  /** Crea el `StorageService` adecuado según el ambiente configurado. */
+  private def storageResource(storageConfig: StorageConfig): Resource[IO, StorageService] =
+    storageConfig match
+      case StorageConfig.Local(uploadsDir, baseUrl) =>
+        Resource.eval(LocalStorageService.make(uploadsDir, baseUrl))
+      case StorageConfig.S3(aws) =>
+        S3Service.make(aws)

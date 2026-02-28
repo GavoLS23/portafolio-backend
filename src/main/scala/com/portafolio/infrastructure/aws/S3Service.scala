@@ -4,6 +4,7 @@ import cats.effect.{IO, Resource}
 import com.portafolio.config.AwsConfig
 import com.portafolio.domain.common.Ids.MediaId
 import com.portafolio.domain.media.{MediaType, PresignedUploadRequest, PresignedUploadResponse}
+import com.portafolio.infrastructure.storage.StorageService
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
@@ -14,29 +15,16 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest
 
 import java.time.Duration
 
-/** Servicio de integración con AWS S3.
+/** Implementación de [[StorageService]] para el ambiente de producción con AWS S3.
   *
-  * Genera URLs pre-firmadas para que el frontend suba archivos directamente a S3 sin pasar por el servidor (upload directo).
+  * Usa URLs pre-firmadas para que el frontend suba archivos directamente a S3 sin que el tráfico pase por el servidor (upload directo).
+  *
+  * Expiración de URLs de subida: 10 minutos.
   */
-trait S3Service:
-  /** Nombre del bucket S3 configurado. */
-  def bucket: String
-
-  /** Genera una URL pre-firmada de PUT para subir un archivo a S3. */
-  def generatePresignedPutUrl(req: PresignedUploadRequest): IO[PresignedUploadResponse]
-
-  /** Genera una URL pre-firmada de GET para servir un archivo privado. */
-  def generatePresignedGetUrl(s3Key: String, expiresInSeconds: Int): IO[String]
-
-  /** Elimina un archivo de S3. */
-  def deleteObject(s3Key: String): IO[Unit]
-
-  /** Construye la URL pública de un objeto (si el bucket es público). */
-  def publicUrl(s3Key: String): String
-
 object S3Service:
 
-  def make(config: AwsConfig): Resource[IO, S3Service] =
+  /** Crea el cliente S3 y el presigner. El Resource cierra el presigner al finalizar. */
+  def make(config: AwsConfig): Resource[IO, StorageService] =
     val credentials = StaticCredentialsProvider.create(
       AwsBasicCredentials.create(
         config.accessKeyId.value,
@@ -56,9 +44,11 @@ object S3Service:
         )
       )
       .map { presigner =>
-        new S3Service:
+        new StorageService:
+
           def bucket: String = config.s3Bucket
 
+          /** Genera URL pre-firmada de PUT con validez de 10 minutos. */
           def generatePresignedPutUrl(req: PresignedUploadRequest): IO[PresignedUploadResponse] =
             IO.blocking {
               val mediaId = MediaId.generate()
@@ -67,20 +57,20 @@ object S3Service:
                 case MediaType.Video => "videos"
               val s3Key = s"$folder/${mediaId.value}/${req.filename}"
 
-              val putObjectRequest = PutObjectRequest
+              val putReq = PutObjectRequest
                 .builder()
                 .bucket(config.s3Bucket)
                 .key(s3Key)
                 .contentType(req.mimeType)
                 .build()
 
-              val presignRequest = PutObjectPresignRequest
+              val presignReq = PutObjectPresignRequest
                 .builder()
                 .signatureDuration(Duration.ofMinutes(10))
-                .putObjectRequest(putObjectRequest)
+                .putObjectRequest(putReq)
                 .build()
 
-              val presignedUrl = presigner.presignPutObject(presignRequest)
+              val presignedUrl = presigner.presignPutObject(presignReq)
 
               PresignedUploadResponse(
                 uploadUrl = presignedUrl.url().toString,
@@ -90,23 +80,25 @@ object S3Service:
               )
             }
 
+          /** Genera URL pre-firmada de GET con la expiración indicada. */
           def generatePresignedGetUrl(s3Key: String, expiresInSeconds: Int): IO[String] =
             IO.blocking {
-              val getObjectRequest = GetObjectRequest
+              val getReq = GetObjectRequest
                 .builder()
                 .bucket(config.s3Bucket)
                 .key(s3Key)
                 .build()
 
-              val presignRequest = GetObjectPresignRequest
+              val presignReq = GetObjectPresignRequest
                 .builder()
                 .signatureDuration(Duration.ofSeconds(expiresInSeconds.toLong))
-                .getObjectRequest(getObjectRequest)
+                .getObjectRequest(getReq)
                 .build()
 
-              presigner.presignGetObject(presignRequest).url().toString
+              presigner.presignGetObject(presignReq).url().toString
             }
 
+          /** Elimina el objeto de S3 abriendo un S3Client efímero. */
           def deleteObject(s3Key: String): IO[Unit] =
             Resource
               .fromAutoCloseable(

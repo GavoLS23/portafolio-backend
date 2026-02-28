@@ -1,21 +1,11 @@
--- Crear usuario
+-- 1️⃣ Asegurar que el usuario existe
 CREATE USER "portafolio-user" WITH PASSWORD 'Por7afoli02026';
 
--- Crear esquema si no existe
-CREATE SCHEMA IF NOT EXISTS portafolio;
+-- 2️⃣ Asegurar que la base existe
+CREATE DATABASE "personal-projects";
 
--- Otorgar permisos
+-- 3️⃣ Permitir que el usuario cree schemas (🔥 CLAVE 🔥)
+GRANT CREATE ON DATABASE "personal-projects" TO "portafolio-user";
+
+-- 4️⃣ Permitir conexión
 GRANT CONNECT ON DATABASE "personal-projects" TO "portafolio-user";
-GRANT ALL ON SCHEMA portafolio TO "portafolio-user";
-GRANT CREATE ON SCHEMA portafolio TO "portafolio-user";
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA portafolio TO "portafolio-user";
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA portafolio TO "portafolio-user";
-
--- Permisos futuros
-ALTER DEFAULT PRIVILEGES IN SCHEMA portafolio
-    GRANT ALL ON TABLES TO "portafolio-user";
-ALTER DEFAULT PRIVILEGES IN SCHEMA portafolio
-    GRANT ALL ON SEQUENCES TO "portafolio-user";
-
--- Hacerlo dueño
-ALTER SCHEMA portafolio OWNER TO "portafolio-user";
