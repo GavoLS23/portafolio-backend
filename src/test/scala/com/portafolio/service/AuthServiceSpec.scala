@@ -12,38 +12,41 @@ import org.mindrot.jbcrypt.BCrypt
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
 import org.typelevel.log4cats.Logger
-import org.typelevel.log4cats.noop.NoOpLogger  // Import correcto
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.time.Instant
 import java.util.UUID
 
 class AuthServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers:
 
-  given logger: Logger[IO] = NoOpLogger[IO]()  // Usando el de log4cats
+  given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
 
   private val testConfig = JwtConfig(
-    secret          = Secret("test-secret-key-min-32-chars-long"),
+    secret = Secret("test-secret-key-min-32-chars-long"),
     expirationHours = 24L
   )
 
   private val testUserId = UserId(UUID.randomUUID())
-  private val testEmail  = "admin@test.com"
-  private val rawPass    = "secret123"
+  private val testEmail = "admin@test.com"
+  private val rawPass = "secret123"
   private val hashedPass = BCrypt.hashpw(rawPass, BCrypt.gensalt(4))
 
   private val testUser = User(
-    id             = testUserId,
-    email          = testEmail,
+    id = testUserId,
+    email = testEmail,
     hashedPassword = hashedPass,
-    createdAt      = Instant.now,
-    updatedAt      = Instant.now
+    createdAt = Instant.now,
+    updatedAt = Instant.now
   )
 
   private val userRepo = new UserRepository:
-    def findById(id: UserId): IO[Option[User]]          = IO.pure(if id == testUserId then Some(testUser) else None)
-    def findByEmail(email: String): IO[Option[User]]    = IO.pure(if email == testEmail then Some(testUser) else None)
-    def create(email: String, hp: String): IO[User]     = IO.pure(testUser)
-    def existsAny: IO[Boolean]                          = IO.pure(true)
+    def findById(id: UserId): IO[Option[User]] = IO.pure(if id == testUserId then Some(testUser) else None)
+
+    def findByEmail(email: String): IO[Option[User]] = IO.pure(if email == testEmail then Some(testUser) else None)
+
+    def create(email: String, hp: String): IO[User] = IO.pure(testUser)
+
+    def existsAny: IO[Boolean] = IO.pure(true)
 
   private val authService = AuthService.make(userRepo, testConfig)
 
@@ -76,8 +79,8 @@ class AuthServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers:
     "validar un token generado correctamente" in {
       for
         loginResult <- authService.login(LoginRequest(testEmail, rawPass))
-        token        = loginResult.getOrElse(fail("Login falló")).token
-        validation  <- authService.validateToken(token)
+        token = loginResult.getOrElse(fail("Login falló")).token
+        validation <- authService.validateToken(token)
       yield validation match
         case Right(user) =>
           user.email shouldBe testEmail
@@ -87,7 +90,7 @@ class AuthServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers:
     "rechazar un token inválido" in {
       authService.validateToken("token.invalido.xxx").asserting {
         case Left(AppError.Unauthorized(_)) => succeed
-        case other                          => fail(s"Resultado inesperado: $other")
+        case other => fail(s"Resultado inesperado: $other")
       }
     }
   }

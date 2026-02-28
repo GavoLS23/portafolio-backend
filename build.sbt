@@ -64,8 +64,9 @@ lazy val root = (project in file("."))
       "software.amazon.awssdk" % "s3-transfer-manager" % awsSdkVersion,
 
       // ── Logging ─────────────────────────────────────────────────────────
+      "org.typelevel" %% "log4cats-core"  % log4catsVersion,
       "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
-      "ch.qos.logback" % "logback-classic" % "1.4.14",
+      "ch.qos.logback" % "logback-classic" % "1.5.13",
 
       // ── Testing ─────────────────────────────────────────────────────────
       "org.scalatest" %% "scalatest" % "3.2.18" % Test,
