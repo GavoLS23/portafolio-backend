@@ -2,13 +2,12 @@ name: Scala CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
 
 permissions:
   contents: read
-  dependency-graph: write
 
 jobs:
 
