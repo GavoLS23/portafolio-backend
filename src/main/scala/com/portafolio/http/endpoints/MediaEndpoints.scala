@@ -10,7 +10,6 @@ import com.portafolio.service.{AuthService, MediaService}
 import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
-import sttp.tapir.generic.auto.*
 import sttp.tapir.server.ServerEndpoint
 
 /** Endpoints de media: presigned upload (flujo S3 directo) y gestión de archivos.

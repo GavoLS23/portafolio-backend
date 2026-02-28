@@ -22,7 +22,6 @@ object UserRepository:
   def make(xa: Transactor[IO]): UserRepository = new UserRepository:
 
     // ── Doobie Meta instances ────────────────────────────────────────────────
-    import com.portafolio.domain.common.Ids.UserId.given
 
     private def toUser(
         id: UUID,

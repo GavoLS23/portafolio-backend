@@ -11,7 +11,7 @@
         <parameter value="-Wunused:all" />
         <parameter value="-Xsemanticdb" />
         <parameter value="-semanticdb-target" />
-        <parameter value="$PROJECT_DIR$/target/scala-3.3.1/test-meta" />
+        <parameter value="$PROJECT_DIR$/target/scala-3.3.5/test-meta" />
       </parameters>
     </profile>
     <profile name="sbt 3" modules="portafolio-backend.main">
@@ -22,7 +22,7 @@
         <parameter value="-Wunused:all" />
         <parameter value="-Xsemanticdb" />
         <parameter value="-semanticdb-target" />
-        <parameter value="$PROJECT_DIR$/target/scala-3.3.1/meta" />
+        <parameter value="$PROJECT_DIR$/target/scala-3.3.5/meta" />
       </parameters>
     </profile>
   </component>

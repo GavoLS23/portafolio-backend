@@ -29,8 +29,6 @@ object BlogRepository:
 
   def make(xa: Transactor[IO]): BlogRepository = new BlogRepository:
 
-    import com.portafolio.domain.common.Ids.BlogPostId.given
-    import com.portafolio.domain.common.Ids.MediaId.given
 
     given Meta[PostStatus] = Meta[String].timap(s => PostStatus.fromString(s).getOrElse(PostStatus.Draft))(_.value)
 

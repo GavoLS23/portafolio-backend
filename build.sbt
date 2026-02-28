@@ -5,7 +5,7 @@ inThisBuild(
   List(
     organization := "com.portafolio",
     version := "0.1.0-SNAPSHOT",
-    scalaVersion := "3.3.1",
+    scalaVersion := "3.3.5",
 
     // ── SemanticDB (required for Scalafix semantic rules)
     semanticdbEnabled := true,

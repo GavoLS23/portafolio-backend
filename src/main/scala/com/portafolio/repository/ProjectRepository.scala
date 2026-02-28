@@ -31,9 +31,6 @@ object ProjectRepository:
 
   def make(xa: Transactor[IO]): ProjectRepository = new ProjectRepository:
 
-    import com.portafolio.domain.common.Ids.ProjectId.given
-    import com.portafolio.domain.common.Ids.MediaId.given
-    import com.portafolio.domain.common.Ids.TechnologyId.given
 
     given Meta[ProjectStatus] = Meta[String].timap(s => ProjectStatus.fromString(s).getOrElse(ProjectStatus.Draft))(_.value)
 

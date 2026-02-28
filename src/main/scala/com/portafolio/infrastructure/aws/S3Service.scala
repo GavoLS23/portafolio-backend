@@ -7,13 +7,12 @@ import com.portafolio.domain.media.{MediaType, PresignedUploadRequest, Presigned
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.{DeleteObjectRequest, GetObjectRequest, ObjectCannedACL}
+import software.amazon.awssdk.services.s3.model.{DeleteObjectRequest, GetObjectRequest}
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.services.s3.presigner.model.{GetObjectPresignRequest, PutObjectPresignRequest}
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 
 import java.time.Duration
-import java.util.UUID
 
 /** Servicio de integración con AWS S3.
   *

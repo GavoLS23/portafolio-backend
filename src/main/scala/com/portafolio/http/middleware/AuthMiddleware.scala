@@ -5,8 +5,6 @@ import com.portafolio.domain.auth.AuthenticatedUser
 import com.portafolio.domain.common.errors.{AppError, ErrorResponse}
 import com.portafolio.service.AuthService
 import sttp.model.StatusCode
-import sttp.tapir.json.circe.*
-import sttp.tapir.generic.auto.*
 
 /** Helpers de autenticación para los endpoints de Tapir.
   *

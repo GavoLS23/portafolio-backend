@@ -22,7 +22,6 @@ object TechnologyRepository:
 
   def make(xa: Transactor[IO]): TechnologyRepository = new TechnologyRepository:
 
-    import com.portafolio.domain.common.Ids.TechnologyId.given
 
     private def toTech(id: UUID, name: String, iconUrl: Option[String]): Technology =
       Technology(TechnologyId(id), name, iconUrl)
