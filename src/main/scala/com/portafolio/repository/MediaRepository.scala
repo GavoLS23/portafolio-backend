@@ -13,6 +13,7 @@ import java.util.UUID
 /** Repositorio de metadata de media (las propias imágenes/videos están en S3). */
 trait MediaRepository:
   def findById(id: MediaId): IO[Option[Media]]
+  def findByIds(ids: List[MediaId]): IO[List[Media]]
   def findAll(limit: Int, offset: Int): IO[List[Media]]
   def countAll: IO[Long]
   def create(
@@ -68,6 +69,16 @@ object MediaRepository:
         .map(toMedia)
         .option
         .transact(xa)
+
+    def findByIds(ids: List[MediaId]): IO[List[Media]] =
+      if ids.isEmpty then IO.pure(Nil)
+      else
+        val uuids = ids.map(_.value).toArray
+        (selectAll ++ fr"WHERE id = ANY($uuids)")
+          .query[MediaRow]
+          .map(toMedia)
+          .to[List]
+          .transact(xa)
 
     def findAll(limit: Int, offset: Int): IO[List[Media]] =
       (selectAll ++ fr"ORDER BY created_at DESC LIMIT $limit OFFSET $offset")

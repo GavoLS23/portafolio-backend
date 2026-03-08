@@ -108,6 +108,7 @@ final case class ProjectResponse(
     demoUrl: Option[String],
     repositoryUrl: Option[String],
     thumbnailMediaId: Option[MediaId],
+    thumbnailUrl: Option[String],
     translations: List[TranslationInput],
     technologyIds: List[TechnologyId],
     createdAt: Instant,

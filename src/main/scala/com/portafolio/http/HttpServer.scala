@@ -20,9 +20,7 @@ import scala.concurrent.duration.*
 
 /** Ensambla todos los endpoints, middlewares y levanta el servidor Ember.
   *
-  * La Swagger UI está disponible en la raíz `/`.
-  *
-  * En el ambiente de desarrollo se pueden pasar rutas extra (`devRoutes`) para gestionar archivos locales (upload/serve). En producción se omiten pasando `None`.
+  * Swagger UI disponible en "/"
   */
 object HttpServer:
 
@@ -46,34 +44,42 @@ object HttpServer:
 
     // ── Swagger UI en "/" ─────────────────────────────────────────────────
     val swaggerEndpoints =
-      SwaggerInterpreter(swaggerUIOptions = sttp.tapir.swagger.SwaggerUIOptions.default.copy(pathPrefix = List.empty)).fromServerEndpoints[IO](allEndpoints, "Portfolio API", "1.0.0")
+      SwaggerInterpreter(
+        swaggerUIOptions = sttp.tapir.swagger.SwaggerUIOptions.default.copy(pathPrefix = List.empty)
+      ).fromServerEndpoints[IO](allEndpoints, "Portfolio API", "1.0.0")
 
-    // ── Convertir a Http4s routes ─────────────────────────────────────────
+    // ── Convertir endpoints a HttpRoutes ──────────────────────────────────
     val apiRoutes = Http4sServerInterpreter[IO]().toRoutes(allEndpoints)
     val swaggerRoutes = Http4sServerInterpreter[IO]().toRoutes(swaggerEndpoints)
 
-    // ── CORS ──────────────────────────────────────────────────────────────
-    val corsPolicy = CORS.policy
-      .withAllowOriginHost(config.allowedOrigins.toSet)
-      .withAllowCredentials(true)
-      .withMaxAge(1.day)
+    // ── Política CORS (CLAVE) ─────────────────────────────────────────────
+    val corsPolicy =
+      CORS.policy.withAllowOriginAll.withAllowMethodsAll.withAllowHeadersAll
+        .withMaxAge(1.day)
 
     EmberServerBuilder
       .default[IO]
       .withHost(Host.fromString(config.host).getOrElse(host"0.0.0.0"))
       .withPort(Port.fromInt(config.port).getOrElse(port"8080"))
       .withHttpWebSocketApp { wsBuilder =>
+
         val wsRoutes = PreviewWebSocket.routes(authService, wsBuilder)
+        val extra = devRoutes.getOrElse(HttpRoutes.empty[IO])
 
-        // Las rutas de desarrollo (upload/serve local) se montan solo si están presentes
-        val extraRoutes = devRoutes.getOrElse(HttpRoutes.empty[IO])
+        // ── TODAS las routes juntas ───────────────────────────────────────
+        val routes: HttpRoutes[IO] =
+          extra <+> wsRoutes <+> apiRoutes <+> swaggerRoutes
 
+        // ── CORS DEBE IR AQUÍ (HttpRoutes, no HttpApp) ─────────────────────
+        val corsRoutes: HttpRoutes[IO] =
+          corsPolicy.httpRoutes(routes)
+
+        // ── HttpApp final con logging ─────────────────────────────────────
         val app: HttpApp[IO] =
-          corsPolicy.apply(
-            HttpLogger.httpApp(logHeaders = true, logBody = false)(
-              (extraRoutes <+> wsRoutes <+> apiRoutes <+> swaggerRoutes).orNotFound
-            )
+          HttpLogger.httpApp(logHeaders = true, logBody = false)(
+            corsRoutes.orNotFound
           )
+
         app
       }
       .build

@@ -74,8 +74,8 @@ object Main extends IOApp:
 
       // ── Services ─────────────────────────────────────────────────────────
       authService = AuthService.make(userRepo, config.jwt)
-      projectSvc = ProjectService.make(projRepo)
-      blogSvc = BlogService.make(blogRepo)
+      projectSvc = ProjectService.make(projRepo, mediaRepo, storage)
+      blogSvc = BlogService.make(blogRepo, mediaRepo, storage)
       mediaSvc = MediaService.make(mediaRepo, storage)
       techSvc = TechnologyService.make(techRepo)
 

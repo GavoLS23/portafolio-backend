@@ -8,10 +8,9 @@ import com.portafolio.infrastructure.storage.StorageService
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.{DeleteObjectRequest, GetObjectRequest}
+import software.amazon.awssdk.services.s3.model.{DeleteObjectRequest, GetObjectRequest, ObjectCannedACL, PutObjectRequest}
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.services.s3.presigner.model.{GetObjectPresignRequest, PutObjectPresignRequest}
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
 
 import java.time.Duration
 
@@ -62,6 +61,11 @@ object S3Service:
                 .bucket(config.s3Bucket)
                 .key(s3Key)
                 .contentType(req.mimeType)
+                // El objeto será público al momento de la subida.
+                // NOTA: el bucket debe tener "Block Public Access for ACLs" deshabilitado.
+                // Para migrar a CloudFront (bucket privado + OAC), eliminar esta línea y
+                // construir la publicUrl con el dominio de la distribución CloudFront.
+                .acl(ObjectCannedACL.PUBLIC_READ)
                 .build()
 
               val presignReq = PutObjectPresignRequest
@@ -76,7 +80,8 @@ object S3Service:
                 uploadUrl = presignedUrl.url().toString,
                 mediaId = mediaId,
                 s3Key = s3Key,
-                expiresInS = 600
+                expiresInS = 600,
+                publicUrl = publicUrl(s3Key)
               )
             }
 

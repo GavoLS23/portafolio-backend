@@ -86,6 +86,7 @@ final case class BlogPostResponse(
     slug: String,
     status: PostStatus,
     thumbnailMediaId: Option[MediaId],
+    thumbnailUrl: Option[String],
     publishedAt: Option[Instant],
     translations: List[BlogTranslationInput],
     tags: List[String],

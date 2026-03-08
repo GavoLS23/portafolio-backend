@@ -106,7 +106,7 @@ lazy val root = (project in file("."))
     ),
 
     // ── Assembly ────────────────────────────────────────────
-    assembly / mainClass := Some("com.portafolio.Main"),
+    assembly / mainClass := Some("gls.portafolio.Main"),
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
       case PathList("META-INF", "services", _*) => MergeStrategy.concat

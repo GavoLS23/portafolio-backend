@@ -36,7 +36,8 @@ final class LocalStorageService(uploadsDir: String, baseUrl: String) extends Sto
         uploadUrl = s"$baseUrl/api/v1/dev/upload/$s3Key",
         mediaId = mediaId,
         s3Key = s3Key,
-        expiresInS = 3600
+        expiresInS = 3600,
+        publicUrl = publicUrl(s3Key)
       )
     }
 

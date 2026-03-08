@@ -3,10 +3,11 @@ package com.portafolio.service
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.portafolio.domain.common.Ids.{MediaId, ProjectId, TechnologyId}
-import com.portafolio.domain.common.Language
 import com.portafolio.domain.common.errors.AppError
+import com.portafolio.domain.media.{Media, MediaType}
 import com.portafolio.domain.project.*
-import com.portafolio.repository.ProjectRepository
+import com.portafolio.infrastructure.storage.StorageService
+import com.portafolio.repository.{MediaRepository, ProjectRepository}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
 
@@ -54,11 +55,42 @@ class ProjectServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers:
     def slugExists(slug: String, excludeId: Option[ProjectId]): IO[Boolean] =
       IO.pure(db.values.exists(p => p.slug == slug && !excludeId.contains(p.id)))
 
+  /** Stub de MediaRepository: siempre devuelve vacío (tests sin thumbnails). */
+  private object NoOpMediaRepo extends MediaRepository:
+    def findById(id: MediaId): IO[Option[Media]] = IO.pure(None)
+    def findByIds(ids: List[MediaId]): IO[List[Media]] = IO.pure(Nil)
+    def findAll(limit: Int, offset: Int): IO[List[Media]] = IO.pure(Nil)
+    def countAll: IO[Long] = IO.pure(0L)
+    def create(
+        mediaId: MediaId,
+        s3Key: String,
+        s3Bucket: String,
+        filename: String,
+        mimeType: String,
+        mediaType: MediaType,
+        sizeBytes: Long
+    ): IO[Media] = IO.raiseError(new NotImplementedError("not used in tests"))
+    def confirmUpload(id: MediaId, widthPx: Option[Int], heightPx: Option[Int], durationS: Option[Int]): IO[Option[Media]] =
+      IO.pure(None)
+    def delete(id: MediaId): IO[Option[String]] = IO.pure(None)
+
+  /** Stub de StorageService: URLs de test predecibles. */
+  private object TestStorage extends StorageService:
+    def bucket: String = "test-bucket"
+    def generatePresignedPutUrl(req: com.portafolio.domain.media.PresignedUploadRequest) =
+      IO.raiseError(new NotImplementedError("not used in tests"))
+    def generatePresignedGetUrl(s3Key: String, expiresInSeconds: Int): IO[String] =
+      IO.pure(s"http://test/$s3Key")
+    def deleteObject(s3Key: String): IO[Unit] = IO.unit
+    def publicUrl(s3Key: String): String = s"http://test/$s3Key"
+
+  private def makeService(): ProjectService =
+    ProjectService.make(new InMemoryProjectRepo, NoOpMediaRepo, TestStorage)
+
   "ProjectService" should {
 
     "crear un proyecto con slug único" in {
-      val repo = new InMemoryProjectRepo
-      val service = ProjectService.make(repo)
+      val service = makeService()
       val req = CreateProjectRequest("my-project", None, None, List.empty, List.empty)
 
       service.create(req).asserting {
@@ -68,8 +100,7 @@ class ProjectServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers:
     }
 
     "rechazar slug duplicado" in {
-      val repo = new InMemoryProjectRepo
-      val service = ProjectService.make(repo)
+      val service = makeService()
       val req = CreateProjectRequest("duplicado", None, None, List.empty, List.empty)
 
       for
@@ -79,8 +110,7 @@ class ProjectServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers:
     }
 
     "retornar NotFound para ID inexistente" in {
-      val repo = new InMemoryProjectRepo
-      val service = ProjectService.make(repo)
+      val service = makeService()
       val fakeId = ProjectId.generate()
 
       service.getById(fakeId).asserting {
@@ -90,8 +120,7 @@ class ProjectServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers:
     }
 
     "eliminar proyecto existente" in {
-      val repo = new InMemoryProjectRepo
-      val service = ProjectService.make(repo)
+      val service = makeService()
       val req = CreateProjectRequest("to-delete", None, None, List.empty, List.empty)
 
       for
@@ -99,5 +128,15 @@ class ProjectServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers:
         id = created.getOrElse(fail()).id
         result <- service.delete(id)
       yield result shouldBe Right(())
+    }
+
+    "incluir thumbnailUrl como None cuando el proyecto no tiene thumbnail" in {
+      val service = makeService()
+      val req = CreateProjectRequest("no-thumb", None, None, List.empty, List.empty)
+
+      service.create(req).asserting {
+        case Right(resp) => resp.thumbnailUrl shouldBe None
+        case Left(err)   => fail(s"Error inesperado: $err")
+      }
     }
   }
