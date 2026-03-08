@@ -54,7 +54,8 @@ final case class PresignedUploadResponse(
     uploadUrl: String,
     mediaId: MediaId,
     s3Key: String,
-    expiresInS: Int
+    expiresInS: Int,
+    publicUrl: String
 )
 object PresignedUploadResponse:
   given Encoder[PresignedUploadResponse] = deriveEncoder
