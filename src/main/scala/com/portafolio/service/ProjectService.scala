@@ -4,7 +4,6 @@ import cats.effect.IO
 import cats.syntax.all.*
 import com.portafolio.domain.common.errors.AppError
 import com.portafolio.domain.common.Ids.{MediaId, ProjectId}
-import com.portafolio.domain.media.Media
 import com.portafolio.domain.project.*
 import com.portafolio.infrastructure.storage.StorageService
 import com.portafolio.repository.{MediaRepository, ProjectRepository}
@@ -26,7 +25,7 @@ object ProjectService:
     def listAll(onlyPublished: Boolean): IO[List[ProjectResponse]] =
       for
         projects <- repo.findAll(onlyPublished)
-        thumbIds  = projects.flatMap(_.thumbnailMediaId)
+        thumbIds = projects.flatMap(_.thumbnailMediaId)
         thumbMap <- buildThumbMap(thumbIds)
         responses <- projects.traverse(p => toResponse(p, p.thumbnailMediaId.flatMap(thumbMap.get)))
       yield responses

@@ -25,9 +25,9 @@ object BlogService:
     def listAll(onlyPublished: Boolean, pagination: Pagination): IO[(List[BlogPostResponse], Long)] =
       val enriched =
         for
-          posts     <- repo.findAll(onlyPublished, pagination.limit, pagination.offset)
-          thumbIds   = posts.flatMap(_.thumbnailMediaId)
-          thumbMap  <- buildThumbMap(thumbIds)
+          posts <- repo.findAll(onlyPublished, pagination.limit, pagination.offset)
+          thumbIds = posts.flatMap(_.thumbnailMediaId)
+          thumbMap <- buildThumbMap(thumbIds)
           responses <- posts.traverse(p => toResponse(p, p.thumbnailMediaId.flatMap(thumbMap.get)))
         yield responses
       (enriched, repo.countAll(onlyPublished)).tupled

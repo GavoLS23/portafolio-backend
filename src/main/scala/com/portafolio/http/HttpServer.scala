@@ -19,20 +19,20 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import scala.concurrent.duration.*
 
 /** Ensambla todos los endpoints, middlewares y levanta el servidor Ember.
- *
- * Swagger UI disponible en "/"
- */
+  *
+  * Swagger UI disponible en "/"
+  */
 object HttpServer:
 
   def make(
-            config: ServerConfig,
-            authService: AuthService,
-            projectService: ProjectService,
-            blogService: BlogService,
-            mediaService: MediaService,
-            techService: TechnologyService,
-            devRoutes: Option[HttpRoutes[IO]] = None
-          )(using logger: Logger[IO]): Resource[IO, Server] =
+      config: ServerConfig,
+      authService: AuthService,
+      projectService: ProjectService,
+      blogService: BlogService,
+      mediaService: MediaService,
+      techService: TechnologyService,
+      devRoutes: Option[HttpRoutes[IO]] = None
+  )(using logger: Logger[IO]): Resource[IO, Server] =
 
     // ── Endpoints Tapir ───────────────────────────────────────────────────
     val allEndpoints =
@@ -45,8 +45,7 @@ object HttpServer:
     // ── Swagger UI en "/" ─────────────────────────────────────────────────
     val swaggerEndpoints =
       SwaggerInterpreter(
-        swaggerUIOptions =
-          sttp.tapir.swagger.SwaggerUIOptions.default.copy(pathPrefix = List.empty)
+        swaggerUIOptions = sttp.tapir.swagger.SwaggerUIOptions.default.copy(pathPrefix = List.empty)
       ).fromServerEndpoints[IO](allEndpoints, "Portfolio API", "1.0.0")
 
     // ── Convertir endpoints a HttpRoutes ──────────────────────────────────
@@ -55,10 +54,7 @@ object HttpServer:
 
     // ── Política CORS (CLAVE) ─────────────────────────────────────────────
     val corsPolicy =
-      CORS.policy
-        .withAllowOriginAll
-        .withAllowMethodsAll
-        .withAllowHeadersAll
+      CORS.policy.withAllowOriginAll.withAllowMethodsAll.withAllowHeadersAll
         .withMaxAge(1.day)
 
     EmberServerBuilder

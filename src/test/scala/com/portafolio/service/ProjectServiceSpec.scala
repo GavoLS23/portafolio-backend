@@ -62,8 +62,13 @@ class ProjectServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers:
     def findAll(limit: Int, offset: Int): IO[List[Media]] = IO.pure(Nil)
     def countAll: IO[Long] = IO.pure(0L)
     def create(
-        mediaId: MediaId, s3Key: String, s3Bucket: String,
-        filename: String, mimeType: String, mediaType: MediaType, sizeBytes: Long
+        mediaId: MediaId,
+        s3Key: String,
+        s3Bucket: String,
+        filename: String,
+        mimeType: String,
+        mediaType: MediaType,
+        sizeBytes: Long
     ): IO[Media] = IO.raiseError(new NotImplementedError("not used in tests"))
     def confirmUpload(id: MediaId, widthPx: Option[Int], heightPx: Option[Int], durationS: Option[Int]): IO[Option[Media]] =
       IO.pure(None)
